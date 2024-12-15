@@ -72,7 +72,8 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
   };
 
   const formatYAxisTick = (value: number): string => {
-    // Convert price values to simplified numbers (e.g., 0.015 -> 3, 0.020 -> 4)
+    // Convert price values to simplified numbers
+    // 0.015 -> 3, 0.020 -> 4, 0.025 -> 5, etc.
     const priceMultiplier = 200;
     return Math.round(value * priceMultiplier).toString();
   };
