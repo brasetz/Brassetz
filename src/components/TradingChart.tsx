@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Line } from 'recharts';
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -9,19 +9,59 @@ interface TradingChartProps {
 
 export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine = true }) => {
   const [timeframe, setTimeframe] = useState('1D');
-  const [chartType, setChartType] = useState('line');
   
   const generateData = () => {
-    const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+    let dataPoints;
+    let format;
+    
+    switch(timeframe) {
+      case '5m':
+        dataPoints = 12;
+        format = 'min';
+        break;
+      case '15m':
+        dataPoints = 16;
+        format = 'min';
+        break;
+      case '30m':
+        dataPoints = 24;
+        format = 'min';
+        break;
+      case '1h':
+        dataPoints = 60;
+        format = 'min';
+        break;
+      case '1D':
+        dataPoints = 24;
+        format = 'hour';
+        break;
+      case '1W':
+        dataPoints = 7;
+        format = 'day';
+        break;
+      default:
+        dataPoints = 30;
+        format = 'day';
+    }
+
     const data = [];
     let currentValue = 0;
     
-    for (let i = 0; i < months.length; i++) {
-      currentValue += (coinValue / months.length);
+    for (let i = 0; i < dataPoints; i++) {
+      currentValue += (coinValue / dataPoints);
+      let label;
+      if (format === 'min') {
+        label = `${i * parseInt(timeframe)}m`;
+      } else if (format === 'hour') {
+        label = `${i}h`;
+      } else {
+        label = `${i + 1}d`;
+      }
+      
       data.push({
-        month: months[i],
+        time: label,
         value: showLine ? Number(currentValue.toFixed(3)) : 0,
-        investors: Math.floor((i + 1) * 20000)
+        investors: Math.floor((i + 1) * (100000 / dataPoints))
       });
     }
     return data;
@@ -30,20 +70,6 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
   return (
     <div className="chart-container">
       <div className="flex justify-between mb-4">
-        <div className="space-x-2">
-          <button 
-            onClick={() => setChartType('line')}
-            className={`px-3 py-1 rounded ${chartType === 'line' ? 'bg-accent' : 'bg-card'}`}
-          >
-            Line
-          </button>
-          <button 
-            onClick={() => setChartType('candles')}
-            className={`px-3 py-1 rounded ${chartType === 'candles' ? 'bg-accent' : 'bg-card'}`}
-          >
-            Candles
-          </button>
-        </div>
         <div className="space-x-2">
           {['5m', '15m', '30m', '1h', '1D', '1W', '1M'].map(time => (
             <button
@@ -60,15 +86,24 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
         <LineChart data={generateData()}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
-            dataKey="month" 
-            label={{ value: 'Investors', position: 'bottom' }}
+            dataKey="time" 
+            label={{ value: 'Time', position: 'bottom' }}
           />
           <YAxis 
+            yAxisId="price"
+            orientation="right"
             domain={[0, Math.ceil(coinValue * 1.2 * 100) / 100]}
             tickFormatter={(value) => value.toFixed(3)}
           />
+          <YAxis 
+            yAxisId="investors"
+            orientation="left"
+            domain={[0, 100000]}
+            tickFormatter={(value) => `${value}`}
+          />
           <Tooltip />
           <Line 
+            yAxisId="price"
             type="monotone" 
             dataKey="value" 
             stroke="#4caf50" 
