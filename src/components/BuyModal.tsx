@@ -56,8 +56,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     positions.forEach(pos => {
       let char = code[pos];
-      if (pos === 25 && char === 'z') char = '.';
-      if (/\d/.test(char)) result += char;
+      if (pos === 25 && char === '$') char = '.';
+      if (/\d/.test(char) || char === '.') result += char;
     });
     
     return result;
@@ -65,7 +65,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const isKeywordValid = (keywords: string): boolean => {
     if (!keywords) return false;
-    const numericValue = parseFloat(keywords);
+    const numericValue = parseFloat(keywords.replace('.', ''));
     return numericValue >= coinValue * 2;
   };
 

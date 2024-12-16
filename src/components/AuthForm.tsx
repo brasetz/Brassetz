@@ -36,23 +36,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     const mobileAlpha = transformMobileToAlpha(mobile);
     const emailPrefix = email.slice(0, 3);
     
-    let luhnNumber = '';
-    for (let i = 0; i < 11; i++) {
-      luhnNumber += Math.floor(Math.random() * 10);
-    }
-    let sum = 0;
-    for (let i = 0; i < 11; i++) {
-      let digit = parseInt(luhnNumber[i]);
-      if (i % 2 === 0) {
-        digit *= 2;
-        if (digit > 9) digit -= 9;
-      }
-      sum += digit;
-    }
-    const checkDigit = (10 - (sum % 10)) % 10;
-    luhnNumber += checkDigit;
-
-    return `${prefix}${usernameSuffix}021au${mobileAlpha}120btz${emailPrefix}${luhnNumber}`;
+    // Generate a passphrase that's exactly 26 characters
+    return `${prefix}${usernameSuffix}021au${mobileAlpha}120btz${emailPrefix}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
