@@ -41,6 +41,8 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     toast.success("Balance view accessed successfully!");
   };
 
+  const examplePasscode = "0z0123456789012345670btz12345@123456789012";
+
   return (
     <div className="max-w-md mx-auto space-y-6">
       {!showBalance ? (
@@ -53,12 +55,16 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
               placeholder="Enter 42-character passphrase"
               className="w-full"
             />
-            <p className="text-sm text-muted-foreground mt-2">
-              Example: 0z0XXXXXXXXXXXXX0btzXXXXX@XXXXXX
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Hint: Starts with 0z0 or 0a1, contains 0btz after 22nd char, symbol at 36th position
-            </p>
+            <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+              <p>Format Requirements:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Starts with 0z0 or 0a1</li>
+                <li>Contains 0btz after position 22</li>
+                <li>Symbol at position 36</li>
+                <li>Total length: 42 characters</li>
+              </ul>
+              <p className="mt-2">Example: {examplePasscode}</p>
+            </div>
           </div>
           <Button type="submit" className="w-full">
             View Balance
@@ -66,8 +72,8 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="p-4 bg-card rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Account Information</h3>
+          <div className="p-6 bg-card rounded-lg border border-border">
+            <h3 className="text-lg font-semibold mb-4">Account Information</h3>
             <p className="mb-4">Hi {selectedKeywords.join('')}</p>
             <div className="flex justify-between items-center mb-4">
               <span>Brasetz Balance:</span>

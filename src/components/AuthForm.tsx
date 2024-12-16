@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { TradingChart } from './TradingChart';
 
 interface AuthFormProps {
   onSuccess: (passphrase: string) => void;
@@ -37,7 +36,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     const mobileAlpha = transformMobileToAlpha(mobile);
     const emailPrefix = email.slice(0, 3);
     
-    // Generate Luhn algorithm compliant number
     let luhnNumber = '';
     for (let i = 0; i < 11; i++) {
       luhnNumber += Math.floor(Math.random() * 10);
@@ -63,8 +61,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
     try {
       if (isSignup) {
-        if (username.length !== 7 || !/^\d+$/.test(username)) {
-          toast.error("Username must be 7 digits");
+        if (username.length !== 7) {
+          toast.error("Username must be 7 characters");
           return;
         }
         if (!mobile || !email) {
@@ -88,6 +86,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       setIsLoading(false);
     }
   };
+
+  const exampleLoginPassphrase = "abcde021auXXXXX120btzYYY";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
@@ -114,11 +114,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username (7 digits)"
+                placeholder="Username (7 characters)"
                 maxLength={7}
               />
               <p className="text-sm text-muted-foreground mt-1">
-                Must be exactly 7 digits
+                Must be exactly 7 characters
               </p>
             </div>
             <Input
@@ -143,12 +143,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               placeholder="Enter 26-character passphrase"
               className="w-full"
             />
-            <p className="text-sm text-muted-foreground mt-2">
-              Example: abcde021auXXXXX120btzYYY
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Hint: Contains "021au" after first 5 chars and "120btz" before last 3 chars
-            </p>
+            <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+              <p>Format Requirements:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Contains "021au" after first 5 characters</li>
+                <li>Ends with "120btz" before last 3 characters</li>
+                <li>Total length: 26 characters</li>
+              </ul>
+              <p className="mt-2">Example: {exampleLoginPassphrase}</p>
+            </div>
           </div>
         )}
 

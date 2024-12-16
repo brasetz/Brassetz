@@ -13,7 +13,7 @@ interface BuyModalProps {
 
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
-  const fixedKey = 'qwertyuiopasdfhg23456789mxncbhehwjwhwchcw243567636';
+  const fixedKey = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -89,14 +89,16 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     toast.success("Key copied to clipboard!");
   };
 
-  // Example passcode that meets all requirements
+  const isFormValid = passcode && validatePasscode(passcode) && 
+    isKeywordValid(extractKeywords(passcode));
+
   const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Buy BTZ</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Buy BTZ</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -115,34 +117,41 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </p>
           </div>
 
-          <div>
+          <div className="bg-muted/50 p-3 rounded-lg">
             <label className="text-sm font-medium">Keywords</label>
             <div className="flex items-center space-x-2 mt-1">
-              <span className="text-lg">{extractKeywords(passcode) || '...'}</span>
+              <span className="text-lg font-mono">{extractKeywords(passcode) || '...'}</span>
               {passcode && (
                 isKeywordValid(extractKeywords(passcode)) 
-                  ? <Check className="text-green-500" />
-                  : <X className="text-red-500" />
+                  ? <Check className="text-green-500 h-5 w-5" />
+                  : <X className="text-red-500 h-5 w-5" />
               )}
             </div>
           </div>
 
-          <div>
+          <div className="bg-muted/50 p-3 rounded-lg">
             <label className="text-sm font-medium">Fixed Key</label>
-            <div className="flex items-center justify-between mt-1 p-2 bg-muted rounded-md">
-              <code className="text-sm">{fixedKey}</code>
+            <div className="flex items-center justify-between mt-1 p-2 bg-background rounded-md">
+              <code className="text-sm break-all">{fixedKey}</code>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={copyFixedKey}
+                className="ml-2 flex-shrink-0"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <Button type="submit" className="w-full">Submit Buy Order</Button>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!isFormValid}
+          >
+            Submit Buy Order
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
