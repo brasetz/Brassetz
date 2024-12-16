@@ -8,10 +8,12 @@ import { BrasetzBalance } from './BrasetzBalance';
 export const LoginForm = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showBalanceView, setShowBalanceView] = useState(false);
+  const [userPassphrase, setUserPassphrase] = useState('');
   const COIN_VALUE = 0.035;
   
   const handleAuthSuccess = (passphrase: string) => {
     setIsLoggedIn(true);
+    setUserPassphrase(passphrase);
   };
 
   const handleSell = () => {
@@ -28,6 +30,12 @@ export const LoginForm = () => {
 
   return (
     <div className="space-y-6">
+      {userPassphrase && (
+        <div className="p-4 bg-muted rounded-lg">
+          <p className="text-sm font-medium">Your Passphrase:</p>
+          <code className="block mt-2 p-2 bg-background rounded">{userPassphrase}</code>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-6 bg-card rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-4">Order Your Coin</h2>
