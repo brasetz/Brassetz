@@ -5,14 +5,16 @@ import { LoginForm } from '@/components/LoginForm';
 import { Analytics } from '@/components/Analytics';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { BuyModal } from '@/components/BuyModal';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showChart, setShowChart] = useState(false);
-  const COIN_VALUE = 0.035; // Uneditable coin value
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const COIN_VALUE = 0.035;
 
   const handleBuy = () => {
-    toast.success("Buy order placed successfully!");
+    setShowBuyModal(true);
   };
 
   const handleSell = () => {
@@ -81,12 +83,17 @@ const Index = () => {
 
       {activeTab === 'your account' && (
         <div className="space-y-6">
-          {/* Add account section */}
           <LoginForm />
         </div>
       )}
 
       {activeTab === 'analytics' && <Analytics />}
+
+      <BuyModal 
+        isOpen={showBuyModal}
+        onClose={() => setShowBuyModal(false)}
+        coinValue={COIN_VALUE}
+      />
     </div>
   );
 };
