@@ -33,31 +33,31 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   };
 
   const validatePassphrase = (pass: string): boolean => {
-    // Check total length
-    if (pass.length !== 42) return false;
+    // Check minimum length
+    if (pass.length < 43) return false;
 
-    // Check prefix - now only accepting 0z0
-    if (!pass.startsWith('0z0')) return false;
+    // Check prefix
+    if (!pass.startsWith('0z')) return false;
 
-    // Validate card number (positions 11-22)
-    const cardNumber = pass.slice(10, 22);
+    // Validate card number (positions 2-14)
+    const cardNumber = pass.slice(2, 14);
     if (!validateLuhnNumber(cardNumber)) return false;
 
-    // Check fixed key '0btz' after position 22
-    if (pass.slice(22, 26) !== '0btz') return false;
+    // Check fixed key '0btz' after card number
+    if (pass.slice(14, 18) !== '0btz') return false;
 
-    // Check for symbol at position 36
-    const hasSymbolAt36 = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(pass[35]);
-    if (!hasSymbolAt36) return false;
+    // Check for symbol at the end
+    const hasEndingSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/.test(pass);
+    if (!hasEndingSymbol) return false;
 
     return true;
   };
 
   const extractKeywords = (pass: string): string[] => {
-    const positions = [4, 8, 26, 29, 30, 32, 34, 37, 39, 40];
+    const positions = [19, 24, 27, 30, 31, 33, 35, 38, 40, 41];
     return positions
       .map(pos => pass[pos])
-      .filter(char => char !== '0');
+      .filter(char => !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(char)); // Filter out symbols
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,7 +74,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     toast.success("Balance view accessed successfully!");
   };
 
-  const examplePasscode = "0z0123456789012345670btz12345@123456789012";
+  const examplePasscode = "0z123456789012" + "0btz" + "abc123def456ghi789jkl" + "@";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
@@ -85,19 +85,19 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
               type="password"
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Enter 42-character passphrase"
+              placeholder="Enter passphrase (minimum 43 characters)"
               className="w-full"
             />
             <div className="mt-2 space-y-2 text-sm text-muted-foreground">
               <p>Format Requirements:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Starts with 0z0</li>
-                <li>Contains 12-digit card number after position 10</li>
-                <li>Contains 0btz after position 22</li>
-                <li>Symbol at position 36</li>
-                <li>Total length: 42 characters</li>
+                <li>Starts with 0z</li>
+                <li>Contains 12-digit card number after 0z</li>
+                <li>Contains 0btz after the card number</li>
+                <li>Must end with a symbol</li>
+                <li>Minimum length: 43 characters</li>
               </ul>
-              <p className="mt-2">Example: {examplePasscode}</p>
+              <p className="mt-2">Example format: {examplePasscode}</p>
             </div>
           </div>
           <Button type="submit" className="w-full">
@@ -107,22 +107,26 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
       ) : (
         <div className="space-y-4">
           <div className="p-6 bg-card rounded-lg border border-border">
-            <h3 className="text-lg font-semibold mb-4">Account Information</h3>
-            <p className="mb-4">Hi {selectedKeywords.join('')}</p>
-            <div className="flex justify-between items-center mb-2">
-              <span>Coin Value:</span>
-              <span className="font-bold">${COIN_VALUE}</span>
+            <h3 className="text-lg font-semibold mb-4">
+              Hi {selectedKeywords.join('')}
+            </h3>
+            <div className="space-y-4">
+              <h4 className="font-medium">Account Information</h4>
+              <div className="flex justify-between items-center">
+                <span>Coin Value:</span>
+                <span className="font-bold">${COIN_VALUE}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Brasetz Balance:</span>
+                <span className="font-bold">1 BTZ</span>
+              </div>
+              <Button
+                onClick={onSell}
+                className="w-full bg-red-500 hover:bg-red-600"
+              >
+                Sell
+              </Button>
             </div>
-            <div className="flex justify-between items-center mb-4">
-              <span>Brasetz Balance:</span>
-              <span className="font-bold">1 BTZ</span>
-            </div>
-            <Button
-              onClick={onSell}
-              className="w-full bg-red-500 hover:bg-red-600"
-            >
-              Sell
-            </Button>
           </div>
         </div>
       )}
