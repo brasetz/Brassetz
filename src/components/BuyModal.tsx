@@ -25,7 +25,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (code.slice(29, 35) !== '120btz') return false;
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(code[36])) return false;
     
-    // Luhn algorithm check for last 12 digits
     const lastTwelve = code.slice(-12);
     if (!/^\d+$/.test(lastTwelve)) return false;
     
@@ -34,14 +33,10 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     for (let i = lastTwelve.length - 1; i >= 0; i--) {
       let digit = parseInt(lastTwelve[i]);
-      
       if (isEven) {
         digit *= 2;
-        if (digit > 9) {
-          digit -= 9;
-        }
+        if (digit > 9) digit -= 9;
       }
-      
       sum += digit;
       isEven = !isEven;
     }
@@ -56,8 +51,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     positions.forEach(pos => {
       let char = code[pos];
-      if (pos === 25 && char === '$') char = '.';
-      if (/\d/.test(char) || char === '.') result += char;
+      // Replace any symbol with a dot
+      if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
+        char = '.';
+      }
+      if (/[\d.]/.test(char)) result += char;
     });
     
     return result;
@@ -89,8 +87,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     toast.success("Key copied to clipboard!");
   };
 
-  const isFormValid = passcode && validatePasscode(passcode) && 
-    isKeywordValid(extractKeywords(passcode));
+  const keywords = extractKeywords(passcode);
+  const isValid = isKeywordValid(keywords);
 
   const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
@@ -120,11 +118,22 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           <div className="bg-muted/50 p-3 rounded-lg">
             <label className="text-sm font-medium">Keywords</label>
             <div className="flex items-center space-x-2 mt-1">
-              <span className="text-lg font-mono">{extractKeywords(passcode) || '...'}</span>
-              {passcode && (
-                isKeywordValid(extractKeywords(passcode)) 
-                  ? <Check className="text-green-500 h-5 w-5" />
-                  : <X className="text-red-500 h-5 w-5" />
+              <span className="text-lg font-mono">{keywords || '...'}</span>
+            </div>
+          </div>
+
+          <div className="bg-muted/50 p-3 rounded-lg">
+            <label className="text-sm font-medium">Status</label>
+            <div className="flex items-center space-x-2 mt-1">
+              {keywords && (
+                <>
+                  <span>{isValid ? 'Approved' : 'Not Approved'}</span>
+                  {isValid ? (
+                    <Check className="text-green-500 h-5 w-5" />
+                  ) : (
+                    <X className="text-red-500 h-5 w-5" />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -148,7 +157,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={!isFormValid}
+            disabled={!isValid}
           >
             Submit Buy Order
           </Button>

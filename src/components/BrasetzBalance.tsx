@@ -36,8 +36,8 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     // Check total length
     if (pass.length !== 42) return false;
 
-    // Check prefix
-    if (!pass.startsWith('0z0') && !pass.startsWith('0a1')) return false;
+    // Check prefix - now only accepting 0z0
+    if (!pass.startsWith('0z0')) return false;
 
     // Validate card number (positions 11-22)
     const cardNumber = pass.slice(10, 22);
@@ -91,7 +91,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
             <div className="mt-2 space-y-2 text-sm text-muted-foreground">
               <p>Format Requirements:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Starts with 0z0 or 0a1</li>
+                <li>Starts with 0z0</li>
                 <li>Contains 12-digit card number after position 10</li>
                 <li>Contains 0btz after position 22</li>
                 <li>Symbol at position 36</li>
