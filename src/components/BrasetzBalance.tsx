@@ -13,16 +13,12 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const COIN_VALUE = 0.035;
 
-  const validatePassphrase = (pass: string) => {
-    if (pass.length !== 42) return false;
-    if (!pass.startsWith('0z0') && !pass.startsWith('0a1')) return false;
-    
-    // Check Luhn algorithm for digits 11-22
-    const cardNumber = pass.slice(10, 22);
-    if (!/^\d+$/.test(cardNumber)) return false;
+  const validateLuhnNumber = (cardNumber: string): boolean => {
+    if (!/^\d{12}$/.test(cardNumber)) return false;
     
     let sum = 0;
     let isEven = false;
+    
     for (let i = cardNumber.length - 1; i >= 0; i--) {
       let digit = parseInt(cardNumber[i]);
       if (isEven) {
@@ -32,11 +28,24 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
       sum += digit;
       isEven = !isEven;
     }
-    if (sum % 10 !== 0) return false;
-
-    // Check fixed key 0btz after position 22
-    if (!pass.includes('0btz', 22)) return false;
     
+    return sum % 10 === 0;
+  };
+
+  const validatePassphrase = (pass: string): boolean => {
+    // Check total length
+    if (pass.length !== 42) return false;
+
+    // Check prefix
+    if (!pass.startsWith('0z0') && !pass.startsWith('0a1')) return false;
+
+    // Validate card number (positions 11-22)
+    const cardNumber = pass.slice(10, 22);
+    if (!validateLuhnNumber(cardNumber)) return false;
+
+    // Check fixed key '0btz' after position 22
+    if (pass.slice(22, 26) !== '0btz') return false;
+
     // Check for symbol at position 36
     const hasSymbolAt36 = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(pass[35]);
     if (!hasSymbolAt36) return false;
@@ -44,7 +53,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     return true;
   };
 
-  const extractKeywords = (pass: string) => {
+  const extractKeywords = (pass: string): string[] => {
     const positions = [4, 8, 26, 29, 30, 32, 34, 37, 39, 40];
     return positions
       .map(pos => pass[pos])
@@ -53,8 +62,9 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!validatePassphrase(passphrase)) {
-      toast.error("Invalid passphrase format");
+      toast.error("Wrong passcode. Connect at connectbrasetz@gmail.com");
       return;
     }
 
