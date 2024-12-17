@@ -80,6 +80,8 @@ const Index = () => {
               Sell
             </Button>
           </div>
+
+          <Analytics />
         </div>
       )}
 

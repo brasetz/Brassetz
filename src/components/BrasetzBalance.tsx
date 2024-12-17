@@ -57,7 +57,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     const positions = [19, 24, 27, 30, 31, 33, 35, 38, 40, 41];
     return positions
       .map(pos => pass[pos])
-      .filter(char => !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(char)); // Filter out symbols
+      .filter(char => !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(char));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
