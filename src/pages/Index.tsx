@@ -6,11 +6,13 @@ import { Analytics } from '@/components/Analytics';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BuyModal } from '@/components/BuyModal';
+import { SellModal } from '@/components/SellModal';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showChart, setShowChart] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
   const COIN_VALUE = 0.035;
 
   const handleBuy = () => {
@@ -18,7 +20,7 @@ const Index = () => {
   };
 
   const handleSell = () => {
-    toast.error("Sell order placed successfully!");
+    setShowSellModal(true);
   };
 
   return (
@@ -92,6 +94,12 @@ const Index = () => {
       <BuyModal 
         isOpen={showBuyModal}
         onClose={() => setShowBuyModal(false)}
+        coinValue={COIN_VALUE}
+      />
+      
+      <SellModal 
+        isOpen={showSellModal}
+        onClose={() => setShowSellModal(false)}
         coinValue={COIN_VALUE}
       />
     </div>
