@@ -5,15 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Check, Copy, X } from "lucide-react";
 import { toast } from "sonner";
 
-interface SellModalProps {
+interface BuyModalProps {
   isOpen: boolean;
   onClose: () => void;
   coinValue: number;
 }
 
-export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue }) => {
-  const [passcode, setPasscode] = useState('');
-  const fixedKey = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -51,6 +49,7 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
     
     positions.forEach(pos => {
       let char = code[pos];
+      // Replace any symbol with a dot
       if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
         char = '.';
       }
@@ -63,7 +62,7 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
   const isKeywordValid = (keywords: string): boolean => {
     if (!keywords) return false;
     const numericValue = parseFloat(keywords.replace('.', ''));
-    return numericValue <= coinValue;
+    return numericValue >= coinValue * 2;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +70,7 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
     if (validatePasscode(passcode)) {
       const keywords = extractKeywords(passcode);
       if (isKeywordValid(keywords)) {
-        toast.success("Sell order placed successfully!");
+        toast.success("Buy order placed successfully!");
         onClose();
       } else {
         toast.error("Invalid keywords value");
@@ -95,7 +94,7 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Sell BTZ</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Buy BTZ</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -137,28 +136,14 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
             </div>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <label className="text-sm font-medium">Fixed Key</label>
-            <div className="flex items-center justify-between mt-1 p-2 bg-background rounded-md">
-              <code className="text-sm break-all">{fixedKey}</code>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={copyFixedKey}
-                className="ml-2 flex-shrink-0"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+      
 
           <Button 
             type="submit" 
             className="w-full" 
             disabled={!isValid}
           >
-            Submit Sell Order
+            Submit sell Order
           </Button>
         </form>
       </DialogContent>
