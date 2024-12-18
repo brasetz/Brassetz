@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Check, X } from "lucide-react";
 
 interface BrasetzBalanceProps {
   onSell: () => void;
@@ -11,6 +12,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   const [passphrase, setPassphrase] = useState('');
   const [showBalance, setShowBalance] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [isLuhnValid, setIsLuhnValid] = useState(false);
   const COIN_VALUE = 0.035;
 
   const validateLuhnNumber = (cardNumber: string): boolean => {
@@ -33,18 +35,20 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   };
 
   const validatePassphrase = (pass: string): boolean => {
-    // Check minimum length
-    if (pass.length < 43) return false;
+    // Check exact length
+    if (pass.length !== 52) return false;
 
     // Check prefix
     if (!pass.startsWith('0z')) return false;
 
-    // Validate card number (positions 2-14)
-    const cardNumber = pass.slice(2, 14);
-    if (!validateLuhnNumber(cardNumber)) return false;
+    // Check for '0btz' after 10th position
+    if (pass.slice(10, 14) !== '0btz') return false;
 
-    // Check fixed key '0btz' after card number
-    if (pass.slice(14, 18) !== '0btz') return false;
+    // Check Luhn number (positions 36-48)
+    const luhnNumber = pass.slice(36, 48);
+    const isLuhnNumberValid = validateLuhnNumber(luhnNumber);
+    setIsLuhnValid(isLuhnNumberValid);
+    if (!isLuhnNumberValid) return false;
 
     // Check for symbol at the end
     const hasEndingSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/.test(pass);
@@ -54,10 +58,16 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   };
 
   const extractKeywords = (pass: string): string[] => {
-    const positions = [19, 24, 27, 30, 31, 33, 35, 38, 40, 41];
+    const positions = [4, 8, 26, 29, 30, 32, 34, 49, 50];
     return positions
       .map(pos => pass[pos])
       .filter(char => !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(char));
+  };
+
+  const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassphrase(value);
+    validatePassphrase(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,34 +84,49 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     toast.success("Balance view accessed successfully!");
   };
 
-  const examplePasscode = "0z123456789012" + "0btz" + "abc123def456ghi789jkl" + "@";
+  const examplePasscode = "0z1234567890btz123456789012345678901234567890123@";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
       {!showBalance ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Enter passphrase (minimum 43 characters)"
-              className="w-full"
-            />
-            <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-2">
+            <div className="relative">
+              <Input
+                type="password"
+                value={passphrase}
+                onChange={handlePassphraseChange}
+                placeholder="Enter passphrase (exactly 52 characters)"
+                className="pr-10"
+              />
+              {passphrase.length === 52 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {isLuhnValid ? (
+                    <Check className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <X className="h-5 w-5 text-red-500" />
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground space-y-2">
               <p>Format Requirements:</p>
               <ul className="list-disc pl-5 space-y-1">
+                <li>Must be exactly 52 characters</li>
                 <li>Starts with 0z</li>
-                <li>Contains 12-digit card number after 0z</li>
-                <li>Contains 0btz after the card number</li>
+                <li>Contains 0btz after 10th position</li>
+                <li>Contains valid 12-digit Luhn number after position 36</li>
                 <li>Must end with a symbol</li>
-                <li>Minimum length: 43 characters</li>
               </ul>
               <p className="mt-2">Example format: {examplePasscode}</p>
             </div>
           </div>
-          <Button type="submit" className="w-full">
-            View Balance
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={!validatePassphrase(passphrase)}
+          >
+            Submit
           </Button>
         </form>
       ) : (
