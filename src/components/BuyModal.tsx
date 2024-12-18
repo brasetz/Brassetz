@@ -63,7 +63,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const isKeywordValid = (keywords: string): boolean => {
     if (!keywords) return false;
     const numericValue = parseFloat(keywords.replace('.', ''));
-    return numericValue >= coinValue * 2;
+     return !isNaN(numericValue) && numericValue >= coinValue * 2  
   };
 
   const handleSubmit = (e: React.FormEvent) => {
