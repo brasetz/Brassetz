@@ -84,7 +84,8 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     toast.success("Balance view accessed successfully!");
   };
 
-  const examplePasscode = "0z1234567890btz123456789012345678901234567890123@";
+  // Example with valid Luhn number (424242424242)
+  const examplePasscode = "0z12345678900btz123456789012345678424242424242AB@";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
