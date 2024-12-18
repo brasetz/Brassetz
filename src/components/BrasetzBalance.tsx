@@ -12,21 +12,25 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   const [passphrase, setPassphrase] = useState('');
   const [showBalance, setShowBalance] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-  const [isLuhnValid, setIsLuhnValid] = useState(false);
   const COIN_VALUE = 0.035;
 
   const validateLuhnNumber = (cardNumber: string): boolean => {
     if (!/^\d{12}$/.test(cardNumber)) return false;
     
+    const digits = cardNumber.split('').map(Number);
     let sum = 0;
     let isEven = false;
     
-    for (let i = cardNumber.length - 1; i >= 0; i--) {
-      let digit = parseInt(cardNumber[i]);
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let digit = digits[i];
+      
       if (isEven) {
         digit *= 2;
-        if (digit > 9) digit -= 9;
+        if (digit > 9) {
+          digit -= 9;
+        }
       }
+      
       sum += digit;
       isEven = !isEven;
     }
@@ -46,9 +50,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
 
     // Check Luhn number (positions 36-48)
     const luhnNumber = pass.slice(36, 48);
-    const isLuhnNumberValid = validateLuhnNumber(luhnNumber);
-    setIsLuhnValid(isLuhnNumberValid);
-    if (!isLuhnNumberValid) return false;
+    if (!validateLuhnNumber(luhnNumber)) return false;
 
     // Check for symbol at the end
     const hasEndingSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/.test(pass);
@@ -67,7 +69,6 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
   const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassphrase(value);
-    validatePassphrase(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -84,8 +85,8 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
     toast.success("Balance view accessed successfully!");
   };
 
-  // Example with valid Luhn number (123456789012)
-  const examplePasscode = "0z12345678900btz123456789012345678123456789012AB@";
+  // Example with valid Luhn number (424242424242)
+  const examplePasscode = "0z12345678900btz123456789012345678424242424242AB@";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
