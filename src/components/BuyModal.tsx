@@ -14,7 +14,7 @@ interface BuyModalProps {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const fixedKey = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-  
+
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
     if (!code.startsWith('0x')) return false;
@@ -24,13 +24,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (code[24] !== 'z') return false;
     if (code.slice(29, 35) !== '120btz') return false;
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(code[36])) return false;
-    
+
     const lastTwelve = code.slice(-12);
     if (!/^\d+$/.test(lastTwelve)) return false;
-    
+
     let sum = 0;
     let isEven = false;
-    
+
     for (let i = lastTwelve.length - 1; i >= 0; i--) {
       let digit = parseInt(lastTwelve[i]);
       if (isEven) {
@@ -40,7 +40,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       sum += digit;
       isEven = !isEven;
     }
-    
+
     return sum % 10 === 0;
   };
 
@@ -48,22 +48,22 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (code.length < 39) return '';
     const positions = [3, 5, 8, 12, 17, 18, 21, 23, 24, 25, 27, 29, 38];
     let result = '';
-    
+
     positions.forEach(pos => {
       let char = code[pos];
       if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
         char = '.';
       }
-      if (/[\d.]/.test(char)) result += char;
+      result += char;
     });
-    
-    return result;
+
+    return result.replace(/[^\d.]/g, ''); // Keep only numeric and decimal points
   };
 
   const isKeywordValid = (keywords: string): boolean => {
     if (!keywords) return false;
-    const numericValue = parseFloat(keywords.replace('.', ''));
-     return !isNaN(numericValue) && numericValue >= coinValue * 2  
+    const numericValue = parseFloat(keywords); // Convert to number
+    return numericValue >= coinValue * 2; // Check if double or greater
   };
 
   const handleSubmit = (e: React.FormEvent) => {
