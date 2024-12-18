@@ -137,21 +137,7 @@ export const SellModal: React.FC<SellModalProps> = ({ isOpen, onClose, coinValue
             </div>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
-            <label className="text-sm font-medium">Fixed Key</label>
-            <div className="flex items-center justify-between mt-1 p-2 bg-background rounded-md">
-              <code className="text-sm break-all">{fixedKey}</code>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={copyFixedKey}
-                className="ml-2 flex-shrink-0"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        
 
           <Button 
             type="submit" 
