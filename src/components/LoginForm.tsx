@@ -38,7 +38,7 @@ export const LoginForm = () => {
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-6 bg-card rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold mb-4">Your Coin</h2>
+          <h2 className="text-2xl font-bold mb-4">Order Your Coin</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Price:</span>

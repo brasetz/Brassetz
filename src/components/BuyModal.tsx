@@ -17,7 +17,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
-    if (!code.startsWith('0x')) return false;
+    if (!code.startsWith('0x') && !code.startsWith('0a')) return false;
     if (code[10] !== 'j') return false;
     if (code[14] !== 'm') return false;
     if (code[19] !== 't') return false;
@@ -51,6 +51,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     positions.forEach(pos => {
       let char = code[pos];
+      // Replace any symbol with a dot
       if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
         char = '.';
       }
@@ -64,7 +65,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (!keywords) return false;
     const numericValue = parseFloat(keywords.replace('.', ''));
     return numericValue >= coinValue * 2;
-   };
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +88,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const keywords = extractKeywords(passcode);
-  const isValid = validatePasscode(passcode) && isKeywordValid(keywords);
+  const isValid = isKeywordValid(keywords);
 
   const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
@@ -100,32 +101,15 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium">Passcode</label>
-            <div className="relative">
-              <Input
-                type="password"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="mt-1 pr-10"
-                placeholder="Enter 52-character passcode"
-              />
-              {passcode.length === 52 && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {validatePasscode(passcode) ? (
-                    <Check className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <X className="h-5 w-5 text-red-500" />
-                  )}
-                </span>
-              )}
-            </div>
+            <Input
+              type="password"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              className="mt-1"
+              placeholder="Enter 52-character passcode"
+            />
             <p className="text-sm text-muted-foreground mt-1">
-              Format Requirements:
-              <br />
-              - Starts with 0x
-              <br />
-              - 11th='j', 15th='m', 20th='t', 25th='z'
-              <br />
-              - 30-35='120btz', 37th=symbol, last 12=Luhn
+              Format: Starts with 0x/0a, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
               <br />
               Example: {examplePasscode}
             </p>
