@@ -47,12 +47,12 @@ const Index = () => {
             />
             <StatCard 
               title="Total Valuation" 
-              value="$1,234,567"
+              value="$18"
               change="+2.1%"
             />
             <StatCard 
               title="Total Investors" 
-              value="100,000"
+              value="120"
               change="+1.8%"
             />
           </div>
