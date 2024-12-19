@@ -17,7 +17,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
-    if (!code.startsWith('0x') && !code.startsWith('0a')) return false;
+    if (!code.startsWith('0x')) return false;
     if (code[10] !== 'j') return false;
     if (code[14] !== 'm') return false;
     if (code[19] !== 't') return false;
@@ -51,7 +51,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     positions.forEach(pos => {
       let char = code[pos];
-      // Replace any symbol with a dot
       if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
         char = '.';
       }
@@ -88,7 +87,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const keywords = extractKeywords(passcode);
-  const isValid = isKeywordValid(keywords);
+  const isValid = validatePasscode(passcode) && isKeywordValid(keywords);
 
   const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
@@ -101,15 +100,26 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm font-medium">Passcode</label>
-            <Input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              className="mt-1"
-              placeholder="Enter 52-character passcode"
-            />
+            <div className="relative">
+              <Input
+                type="password"
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                className="mt-1 pr-10"
+                placeholder="Enter 52-character passcode"
+              />
+              {passcode && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  {isValid ? (
+                    <Check className="text-green-500 h-5 w-5" />
+                  ) : (
+                    <X className="text-red-500 h-5 w-5" />
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Format: Starts with 0x/0a, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
+              Format: Starts with 0x, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
               <br />
               Example: {examplePasscode}
             </p>

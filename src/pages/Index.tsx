@@ -4,7 +4,6 @@ import { StatCard } from '@/components/StatCard';
 import { LoginForm } from '@/components/LoginForm';
 import { Analytics } from '@/components/Analytics';
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { BuyModal } from '@/components/BuyModal';
 import { SellModal } from '@/components/SellModal';
 
@@ -73,22 +72,12 @@ const Index = () => {
             >
               Buy
             </Button>
-            <Button
-              onClick={handleSell}
-              className="flex-1 bg-red-500 hover:bg-red-600"
-            >
-              Sell
-            </Button>
           </div>
-
-          <Analytics />
         </div>
       )}
 
       {activeTab === 'your account' && (
-        <div className="space-y-6">
-          <LoginForm />
-        </div>
+        <LoginForm />
       )}
 
       {activeTab === 'analytics' && <Analytics />}
