@@ -87,7 +87,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const isValid = validatePasscode(passcode);
   const keywords = extractKeywords(passcode);
-  const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
+  // const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,11 +105,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               className="mt-1"
               placeholder="Enter 52-character passcode"
             />
-            <p className="text-sm text-muted-foreground mt-1">
+{/*             <p className="text-sm text-muted-foreground mt-1">
               Format: Starts with 0x, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
               <br />
               Example: {examplePasscode}
-            </p>
+            </p> */}
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg">
