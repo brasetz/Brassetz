@@ -13,7 +13,7 @@ const Index = () => {
   const [showChart, setShowChart] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
-  const COIN_VALUE = 100.60;
+  const COIN_VALUE = 1.60;
 
   const handleBuy = () => {
     setShowBuyModal(true);
