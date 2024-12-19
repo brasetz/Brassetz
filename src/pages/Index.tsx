@@ -4,22 +4,19 @@ import { StatCard } from '@/components/StatCard';
 import { LoginForm } from '@/components/LoginForm';
 import { Analytics } from '@/components/Analytics';
 import { Button } from "@/components/ui/button";
-import { BuyModal } from '@/components/BuyModal';
-import { SellModal } from '@/components/SellModal';
+import { toast } from "sonner";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showChart, setShowChart] = useState(false);
-  const [showBuyModal, setShowBuyModal] = useState(false);
-  const [showSellModal, setShowSellModal] = useState(false);
-  const COIN_VALUE = 100.60;
+  const COIN_VALUE = 0.035; // Uneditable coin value
 
   const handleBuy = () => {
-    setShowBuyModal(true);
+    toast.success("Buy order placed successfully!");
   };
 
   const handleSell = () => {
-    setShowSellModal(true);
+    toast.error("Sell order placed successfully!");
   };
 
   return (
@@ -46,12 +43,12 @@ const Index = () => {
             />
             <StatCard 
               title="Total Valuation" 
-              value="$18"
+              value="$1,234,567"
               change="+2.1%"
             />
             <StatCard 
               title="Total Investors" 
-              value="120"
+              value="100,000"
               change="+1.8%"
             />
           </div>
@@ -72,27 +69,24 @@ const Index = () => {
             >
               Buy
             </Button>
+            <Button
+              onClick={handleSell}
+              className="flex-1 bg-red-500 hover:bg-red-600"
+            >
+              Sell
+            </Button>
           </div>
         </div>
       )}
 
       {activeTab === 'your account' && (
-        <LoginForm />
+        <div className="space-y-6">
+          {/* Add account section */}
+          <LoginForm />
+        </div>
       )}
 
       {activeTab === 'analytics' && <Analytics />}
-
-      <BuyModal 
-        isOpen={showBuyModal}
-        onClose={() => setShowBuyModal(false)}
-        coinValue={COIN_VALUE}
-      />
-      
-      <SellModal 
-        isOpen={showSellModal}
-        onClose={() => setShowSellModal(false)}
-        coinValue={COIN_VALUE}
-      />
     </div>
   );
 };

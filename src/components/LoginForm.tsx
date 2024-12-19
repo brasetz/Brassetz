@@ -1,79 +1,79 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { TradingChart } from './TradingChart';
-import { AuthForm } from './AuthForm';
-import { BuyModal } from './BuyModal';
 
 export const LoginForm = () => {
+  const [passphrase, setPassphrase] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userPassphrase, setUserPassphrase] = useState('');
-  const [showBuyModal, setShowBuyModal] = useState(false);
-  const [hasBought, setHasBought] = useState(false);
+  const pattern = /^.{5}021au.*120btz.{3}$/;
   const COIN_VALUE = 0.035;
   
-  const handleAuthSuccess = (passphrase: string) => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passphrase.length !== 26) {
+      toast.error("Passphrase must be 26 characters long");
+      return;
+    }
+    if (!pattern.test(passphrase)) {
+      toast.error("Invalid passphrase pattern");
+      return;
+    }
     setIsLoggedIn(true);
-    setUserPassphrase(passphrase);
+    toast.success("Login successful!");
   };
 
-  const handleBuySuccess = () => {
-    setHasBought(true);
-    toast.success("Your balance is 1 BTZ");
+  const handleSell = () => {
+    toast.error("Sell order placed successfully!");
   };
 
-  if (!isLoggedIn) {
-    return <AuthForm onSuccess={handleAuthSuccess} />;
+  if (isLoggedIn) {
+    return (
+      <div className="space-y-6">
+        <div className="p-6 bg-card rounded-lg shadow-lg">
+          <h2 className="text-2xl font-bold mb-4">Account Information</h2>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Account Type:</span>
+              <span className="font-medium">Brasetz Account</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Balance:</span>
+              <span className="font-medium">1 BTZ</span>
+            </div>
+            <Button
+              onClick={handleSell}
+              className="w-full bg-red-500 hover:bg-red-600"
+            >
+              Sell
+            </Button>
+          </div>
+        </div>
+        
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4">Trading Chart</h3>
+          <TradingChart coinValue={COIN_VALUE} showLine={true} />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {userPassphrase && (
-        <div className="p-4 bg-muted rounded-lg">
-          <p className="text-sm font-medium">Your Passphrase:</p>
-          <code className="block mt-2 p-2 bg-background rounded">{userPassphrase}</code>
-        </div>
-      )}
-      
-      {hasBought ? (
-        <div className="space-y-4">
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-lg font-medium">Your Balance: 1 BTZ</p>
-          </div>
-          <Button
-            onClick={() => toast.success("Sell functionality coming soon!")}
-            className="w-full bg-red-500 hover:bg-red-600"
-          >
-            Sell BTZ
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          <div className="p-6 bg-card rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">Buy BTZ</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Price:</span>
-                <span className="font-medium">1 BTZ = ${COIN_VALUE}</span>
-              </div>
-              <Button
-                onClick={() => setShowBuyModal(true)}
-                className="w-full bg-green-500 hover:bg-green-600"
-              >
-                Buy BTZ
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <BuyModal 
-        isOpen={showBuyModal}
-        onClose={() => {
-          setShowBuyModal(false);
-        }}
-        coinValue={COIN_VALUE}
-      />
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+      <div>
+        <Input
+          type="password"
+          value={passphrase}
+          onChange={(e) => setPassphrase(e.target.value)}
+          placeholder="Enter 26-digit passphrase"
+          className="w-full"
+        />
+        <p className="text-sm text-muted-foreground mt-2">
+          Hint: 26 digits, contains "021au" after first 5 digits and "120btz" before last 3 digits
+        </p>
+      </div>
+      <Button type="submit" className="w-full">Login</Button>
+    </form>
   );
 };
