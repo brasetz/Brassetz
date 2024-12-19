@@ -87,6 +87,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const isValid = validatePasscode(passcode);
   const keywords = extractKeywords(passcode);
+  const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -106,13 +107,21 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             />
             <p className="text-sm text-muted-foreground mt-1">
               Format: Starts with 0x, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
+              <br />
+              Example: {examplePasscode}
             </p>
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg">
             <label className="text-sm font-medium">Keywords</label>
             <div className="flex items-center space-x-2 mt-1">
-              <span className="text-lg font-mono">{keywords || '...'}</span>
+              <Input 
+                type="text"
+                value={isValid ? keywords : ''}
+                readOnly
+                className="font-mono bg-background"
+                placeholder="Keywords will appear here"
+              />
             </div>
           </div>
 
