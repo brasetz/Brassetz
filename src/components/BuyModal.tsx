@@ -17,17 +17,25 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
-    if (!code.startsWith('0x') && !code.startsWith('0a')) return false;
-    if (code[10] !== 'j') return false;
-    if (code[14] !== 'm') return false;
-    if (code[19] !== 't') return false;
-    if (code[24] !== 'z') return false;
+    if (!code.startsWith('0x')) return false;
+    
+    // Check specific character positions
+    if (code[10] !== 'j') return false;  // 11th position
+    if (code[14] !== 'm') return false;  // 15th position
+    if (code[19] !== 't') return false;  // 20th position
+    if (code[24] !== 'z') return false;  // 25th position
+    
+    // Check 30-35 position for '120btz'
     if (code.slice(29, 35) !== '120btz') return false;
+    
+    // Check 37th position for symbol
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(code[36])) return false;
     
+    // Validate last 12 characters are numbers and follow Luhn algorithm
     const lastTwelve = code.slice(-12);
     if (!/^\d+$/.test(lastTwelve)) return false;
     
+    // Luhn algorithm validation
     let sum = 0;
     let isEven = false;
     
@@ -46,7 +54,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const extractKeywords = (code: string): string => {
     if (code.length < 39) return '';
-    const positions = [3, 5, 8, 12, 17, 18, 21, 23, 24, 25, 27, 29, 38];
+    const positions = [5, 7, 11, 17, 21, 27, 30, 32]; // 6th, 8th, 12th, 18th, 22nd, 28th, 31st, 33rd positions
     let result = '';
     
     positions.forEach(pos => {
@@ -55,28 +63,18 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
         char = '.';
       }
+      // Only add numbers and dots to result
       if (/[\d.]/.test(char)) result += char;
     });
     
     return result;
   };
 
-  const isKeywordValid = (keywords: string): boolean => {
-    if (!keywords) return false;
-    const numericValue = parseFloat(keywords.replace('.', ''));
-    return numericValue >= coinValue * 2;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validatePasscode(passcode)) {
-      const keywords = extractKeywords(passcode);
-      if (isKeywordValid(keywords)) {
-        toast.success("Buy order placed successfully!");
-        onClose();
-      } else {
-        toast.error("Invalid keywords value");
-      }
+      toast.success("Buy order placed successfully!");
+      onClose();
     } else {
       toast.error("Invalid passcode format");
     }
@@ -87,10 +85,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     toast.success("Key copied to clipboard!");
   };
 
+  const isValid = validatePasscode(passcode);
   const keywords = extractKeywords(passcode);
-  const isValid = isKeywordValid(keywords);
-
-  const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -102,16 +98,14 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           <div>
             <label className="text-sm font-medium">Passcode</label>
             <Input
-              type="password"
+              type="text"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               className="mt-1"
               placeholder="Enter 52-character passcode"
             />
             <p className="text-sm text-muted-foreground mt-1">
-              Format: Starts with 0x/0a, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
-              <br />
-              Example: {examplePasscode}
+              Format: Starts with 0x, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
             </p>
           </div>
 
@@ -125,7 +119,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           <div className="bg-muted/50 p-3 rounded-lg">
             <label className="text-sm font-medium">Status</label>
             <div className="flex items-center space-x-2 mt-1">
-              {keywords && (
+              {passcode && (
                 <>
                   <span>{isValid ? 'Approved' : 'Not Approved'}</span>
                   {isValid ? (
