@@ -1,8 +1,6 @@
-# Welcome to your Lovable project
+# Welcome to your brasetz project
 
 ## Project info
-
-**URL**: https://lovable.dev/projects/a7891dfb-df11-44aa-b1bb-24eb19641241
 
 ## How can I edit this code?
 
