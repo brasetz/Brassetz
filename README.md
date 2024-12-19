@@ -6,9 +6,9 @@
 
 There are several ways of editing your application.
 
-**Use Lovable**
+**Use**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a7891dfb-df11-44aa-b1bb-24eb19641241) and start prompting.
+Simply visit the [Project](https://lovable.dev/projects/a7891dfb-df11-44aa-b1bb-24eb19641241) and start edit.
 
 Changes made via Lovable will be committed automatically to this repo.
 
@@ -60,7 +60,7 @@ This project is built with .
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/a7891dfb-df11-44aa-b1bb-24eb19641241) and click on Share -> Publish.
+Simply open (https://lovable.dev/projects/a7891dfb-df11-44aa-b1bb-24eb19641241) and click on Share -> Publish.
 
 ## I want to use a custom domain - is that possible?
 
