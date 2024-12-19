@@ -65,7 +65,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
       data.push({
         time: label,
         value: showLine ? Number(currentValue.toFixed(3)) : 0,
-        investors: Math.floor((i + 1) * (100000 / dataPoints))
+        investors: Math.floor((i + 1) * (100 / dataPoints))
       });
     }
     return data;
@@ -74,7 +74,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
   const formatYAxisTick = (value: number): string => {
     // Convert price values to simplified numbers
     // 0.015 -> 3, 0.020 -> 4, 0.025 -> 5, etc.
-    const priceMultiplier = 200;
+    const priceMultiplier = 20;
     return Math.round(value * priceMultiplier).toString();
   };
 
@@ -109,7 +109,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
           <YAxis 
             yAxisId="investors"
             orientation="left"
-            domain={[0, 100000]}
+            domain={[0, 10]}
             tickFormatter={formatYAxisTick}
           />
           <Tooltip />

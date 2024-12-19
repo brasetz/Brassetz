@@ -5,18 +5,22 @@ import { LoginForm } from '@/components/LoginForm';
 import { Analytics } from '@/components/Analytics';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { BuyModal } from '@/components/BuyModal';
+import { SellModal } from '@/components/SellModal';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showChart, setShowChart] = useState(false);
-  const COIN_VALUE = 0.035; // Uneditable coin value
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const COIN_VALUE = 100.60;
 
   const handleBuy = () => {
-    toast.success("Buy order placed successfully!");
+    setShowBuyModal(true);
   };
 
   const handleSell = () => {
-    toast.error("Sell order placed successfully!");
+    setShowSellModal(true);
   };
 
   return (
@@ -43,12 +47,12 @@ const Index = () => {
             />
             <StatCard 
               title="Total Valuation" 
-              value="$1,234,567"
+              value="$18"
               change="+2.1%"
             />
             <StatCard 
               title="Total Investors" 
-              value="100,000"
+              value="120"
               change="+1.8%"
             />
           </div>
@@ -76,17 +80,30 @@ const Index = () => {
               Sell
             </Button>
           </div>
+
+          <Analytics />
         </div>
       )}
 
       {activeTab === 'your account' && (
         <div className="space-y-6">
-          {/* Add account section */}
           <LoginForm />
         </div>
       )}
 
       {activeTab === 'analytics' && <Analytics />}
+
+      <BuyModal 
+        isOpen={showBuyModal}
+        onClose={() => setShowBuyModal(false)}
+        coinValue={COIN_VALUE}
+      />
+      
+      <SellModal 
+        isOpen={showSellModal}
+        onClose={() => setShowSellModal(false)}
+        coinValue={COIN_VALUE}
+      />
     </div>
   );
 };
