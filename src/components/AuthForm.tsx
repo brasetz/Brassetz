@@ -72,7 +72,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const exampleLoginPassphrase = "abcde021auXXXXX120btzYYY";
+  // const exampleLoginPassphrase = "abcde021auXXXXX120btzYYY";
 
   return (
     <div className="max-w-md mx-auto space-y-6">
@@ -128,7 +128,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               placeholder="Enter 26-character passphrase"
               className="w-full"
             />
-            <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+{/*             <div className="mt-2 space-y-2 text-sm text-muted-foreground">
               <p>Format Requirements:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>Contains "021au" after first 5 characters</li>
@@ -136,7 +136,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 <li>Total length: 26 characters</li>
               </ul>
               <p className="mt-2">Example: {exampleLoginPassphrase}</p>
-            </div>
+            </div> */}
           </div>
         )}
 
