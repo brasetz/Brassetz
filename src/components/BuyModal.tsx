@@ -17,64 +17,43 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
-    if (!code.startsWith('0x')) return false;
-    
-    // Check specific character positions
-    if (code[10] !== 'j') return false;  // 11th position
-    if (code[14] !== 'm') return false;  // 15th position
-    if (code[19] !== 't') return false;  // 20th position
-    if (code[24] !== 'z') return false;  // 25th position
-    
-    // Check 30-35 position for '120btz'
-    if (code.slice(29, 35) !== '120btz') return false;
-    
-    // Check 37th position for symbol
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(code[36])) return false;
-    
-    // Validate last 12 characters are numbers and follow Luhn algorithm
-    const lastTwelve = code.slice(-12);
-    if (!/^\d+$/.test(lastTwelve)) return false;
-    
-    // Luhn algorithm validation
-    let sum = 0;
-    let isEven = false;
-    
-    for (let i = lastTwelve.length - 1; i >= 0; i--) {
-      let digit = parseInt(lastTwelve[i]);
-      if (isEven) {
-        digit *= 2;
-        if (digit > 9) digit -= 9;
-      }
-      sum += digit;
-      isEven = !isEven;
-    }
-    
-    return sum % 10 === 0;
+    if (!code.startsWith('0xb1q')) return false;
+    if (!code.endsWith('1b2t0z')) return false;
+    return true;
   };
 
   const extractKeywords = (code: string): string => {
-    if (code.length < 39) return '';
+    if (code.length < 52) return '';
     const positions = [5, 7, 11, 17, 21, 27, 30, 32]; // 6th, 8th, 12th, 18th, 22nd, 28th, 31st, 33rd positions
     let result = '';
     
     positions.forEach(pos => {
-      let char = code[pos];
-      // Replace any symbol with a dot
-      if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
-        char = '.';
+      const char = code[pos];
+      // Only add numbers and dots (for symbols) to result
+      if (/[0-9]/.test(char)) {
+        result += char;
+      } else if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
+        result += '.';
       }
-      // Only add numbers and dots to result
-      if (/[\d.]/.test(char)) result += char;
     });
     
     return result;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validatePasscode(passcode)) {
-      toast.success("Buy order placed successfully!");
-      onClose();
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          toast.success("MetaMask connected successfully!");
+          onClose();
+        } else {
+          toast.error("MetaMask is not installed!");
+        }
+      } catch (error) {
+        toast.error("Failed to connect to MetaMask");
+      }
     } else {
       toast.error("Invalid passcode format");
     }
@@ -87,7 +66,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const isValid = validatePasscode(passcode);
   const keywords = extractKeywords(passcode);
-  // const examplePasscode = "0x1234j567m89t1234z5678120btz@123456789012";
+  const examplePasscode = "0xb1q" + "0".repeat(41) + "1b2t0z";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,11 +84,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               className="mt-1"
               placeholder="Enter 52-character passcode"
             />
-{/*             <p className="text-sm text-muted-foreground mt-1">
-              Format: Starts with 0x, 11th=j, 15th=m, 20th=t, 25th=z, 30-35=120btz, 37th=symbol, last 12=Luhn
+            <p className="text-sm text-muted-foreground mt-1">
+              Format: Starts with 0xb1q, ends with 1b2t0z, total 52 characters
               <br />
               Example: {examplePasscode}
-            </p> */}
+            </p>
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg">

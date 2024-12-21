@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BuyModal } from '@/components/BuyModal';
 import { SellModal } from '@/components/SellModal';
+import { Wallet } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showChart, setShowChart] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
   const COIN_VALUE = 0.035;
 
   const handleBuy = () => {
@@ -23,19 +25,47 @@ const Index = () => {
     setShowSellModal(true);
   };
 
+  const connectWallet = async () => {
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts.length > 0) {
+          setIsWalletConnected(true);
+          toast.success("Wallet connected successfully!");
+        }
+      } else {
+        toast.error("MetaMask is not installed!");
+      }
+    } catch (error) {
+      toast.error("Failed to connect wallet");
+    }
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6">
-      <nav className="flex space-x-4 mb-6">
-        {['dashboard', 'your account', 'analytics'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`nav-link ${activeTab === tab ? 'active' : ''}`}
+      <div className="flex justify-between items-center mb-6">
+        <nav className="flex space-x-4">
+          {['dashboard', 'your account', 'analytics'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`nav-link ${activeTab === tab ? 'active' : ''}`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </nav>
+        {activeTab === 'dashboard' && (
+          <Button
+            onClick={connectWallet}
+            disabled={isWalletConnected}
+            className="flex items-center gap-2"
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </nav>
+            <Wallet className="h-4 w-4" />
+            {isWalletConnected ? 'Connected' : 'Connect Wallet'}
+          </Button>
+        )}
+      </div>
 
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
