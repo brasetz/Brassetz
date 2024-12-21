@@ -105,14 +105,12 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               placeholder="Enter 52-character passcode"
             />
             <p className="text-sm text-muted-foreground">
-              Format: Starts with 0xb1q, ends with 1b2t0z, total 52 characters
-              <br />
-              Example: {examplePasscode}
+              If don't have passcode,then login/signup and order your coin.
             </p>
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Keywords</label>
+            <label className="text-sm font-medium">Amount</label>
             <div className="flex items-center space-x-2">
               <Input 
                 type="text"
@@ -143,7 +141,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Fixed Key</label>
+            <label className="text-sm font-medium">transfer</label>
             <div className="flex items-center justify-between p-2 bg-background rounded-md">
               <code className="text-sm break-all">{fixedKey}</code>
               <Button
