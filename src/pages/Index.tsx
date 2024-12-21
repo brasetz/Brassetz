@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TradingChart } from '@/components/TradingChart';
 import { StatCard } from '@/components/StatCard';
 import { LoginForm } from '@/components/LoginForm';
@@ -15,7 +15,27 @@ const Index = () => {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
   const COIN_VALUE = 0.035;
+
+  useEffect(() => {
+    // Check if wallet is already connected
+    const checkWalletConnection = async () => {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setIsWalletConnected(true);
+            setWalletAddress(accounts[0]);
+          }
+        } catch (error) {
+          console.error("Error checking wallet connection:", error);
+        }
+      }
+    };
+
+    checkWalletConnection();
+  }, []);
 
   const handleBuy = () => {
     setShowBuyModal(true);
@@ -31,6 +51,7 @@ const Index = () => {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         if (accounts.length > 0) {
           setIsWalletConnected(true);
+          setWalletAddress(accounts[0]);
           toast.success("Wallet connected successfully!");
         }
       } else {
@@ -41,9 +62,14 @@ const Index = () => {
     }
   };
 
+  const formatAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <nav className="flex space-x-4">
           {['dashboard', 'your account', 'analytics'].map((tab) => (
             <button
@@ -56,14 +82,21 @@ const Index = () => {
           ))}
         </nav>
         {activeTab === 'dashboard' && (
-          <Button
-            onClick={connectWallet}
-            disabled={isWalletConnected}
-            className="flex items-center gap-2"
-          >
-            <Wallet className="h-4 w-4" />
-            {isWalletConnected ? 'Connected' : 'Connect Wallet'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isWalletConnected && walletAddress && (
+              <span className="text-sm font-medium bg-muted px-3 py-1 rounded-md">
+                {formatAddress(walletAddress)}
+              </span>
+            )}
+            <Button
+              onClick={connectWallet}
+              disabled={isWalletConnected}
+              className="flex items-center gap-2"
+            >
+              <Wallet className="h-4 w-4" />
+              {isWalletConnected ? 'Connected' : 'Connect Wallet'}
+            </Button>
+          </div>
         )}
       </div>
 

@@ -13,6 +13,7 @@ interface BuyModalProps {
 
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const fixedKey = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
   
   const validatePasscode = (code: string): boolean => {
@@ -29,7 +30,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     
     positions.forEach(pos => {
       const char = code[pos];
-      // Only add numbers and dots (for symbols) to result
       if (/[0-9]/.test(char)) {
         result += char;
       } else if (/[!@#$%^&*(),.?":{}|<>]/.test(char)) {
@@ -42,20 +42,40 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validatePasscode(passcode)) {
-      try {
-        if (typeof window.ethereum !== 'undefined') {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          toast.success("MetaMask connected successfully!");
-          onClose();
-        } else {
-          toast.error("MetaMask is not installed!");
-        }
-      } catch (error) {
-        toast.error("Failed to connect to MetaMask");
-      }
-    } else {
+    if (!validatePasscode(passcode)) {
       toast.error("Invalid passcode format");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        // First connect to MetaMask
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        
+        // Prepare transaction parameters
+        const transactionParameters = {
+          to: fixedKey,
+          from: accounts[0],
+          value: '0x' + (coinValue * 1e18).toString(16), // Convert to Wei
+          gas: '0x5208', // 21000 gas
+        };
+
+        // Request transaction
+        await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParameters],
+        });
+
+        toast.success("Transaction initiated successfully!");
+        onClose();
+      } else {
+        toast.error("MetaMask is not installed!");
+      }
+    } catch (error) {
+      toast.error("Transaction failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -70,30 +90,30 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Buy BTZ</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-4 p-4">
+          <div className="space-y-2">
             <label className="text-sm font-medium">Passcode</label>
             <Input
               type="text"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
-              className="mt-1"
+              className="font-mono"
               placeholder="Enter 52-character passcode"
             />
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground">
               Format: Starts with 0xb1q, ends with 1b2t0z, total 52 characters
               <br />
               Example: {examplePasscode}
             </p>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Keywords</label>
-            <div className="flex items-center space-x-2 mt-1">
+            <div className="flex items-center space-x-2">
               <Input 
                 type="text"
                 value={isValid ? keywords : ''}
@@ -104,25 +124,27 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </div>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Status</label>
-            <div className="flex items-center space-x-2 mt-1">
+            <div className="flex items-center space-x-2">
               {passcode && (
-                <>
-                  <span>{isValid ? 'Approved' : 'Not Approved'}</span>
+                <div className="flex items-center space-x-2 bg-background p-2 rounded-md w-full">
+                  <span className={isValid ? 'text-green-500' : 'text-red-500'}>
+                    {isValid ? 'Approved' : 'Not Approved'}
+                  </span>
                   {isValid ? (
                     <Check className="text-green-500 h-5 w-5" />
                   ) : (
                     <X className="text-red-500 h-5 w-5" />
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg">
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Fixed Key</label>
-            <div className="flex items-center justify-between mt-1 p-2 bg-background rounded-md">
+            <div className="flex items-center justify-between p-2 bg-background rounded-md">
               <code className="text-sm break-all">{fixedKey}</code>
               <Button
                 type="button"
@@ -138,10 +160,10 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
           <Button 
             type="submit" 
-            className="w-full" 
-            disabled={!isValid}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            disabled={!isValid || isProcessing}
           >
-            Submit Buy Order
+            {isProcessing ? 'Processing...' : 'Submit Buy Order'}
           </Button>
         </form>
       </DialogContent>
