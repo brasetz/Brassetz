@@ -90,7 +90,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">Buy BTZ</DialogTitle>
         </DialogHeader>
@@ -111,7 +111,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </p>
           </div>
 
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Keywords</label>
             <div className="flex items-center space-x-2">
               <Input 
@@ -124,7 +124,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </div>
           </div>
 
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Status</label>
             <div className="flex items-center space-x-2">
               {passcode && (
@@ -142,7 +142,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </div>
           </div>
 
-          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
             <label className="text-sm font-medium">Fixed Key</label>
             <div className="flex items-center justify-between p-2 bg-background rounded-md">
               <code className="text-sm break-all">{fixedKey}</code>
