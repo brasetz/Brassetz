@@ -20,12 +20,16 @@ export const LoginForm = () => {
     toast.success("Sell order placed successfully!");
   };
 
+  const handleBackFromBalance = () => {
+    setShowBalanceView(false);
+  };
+
   if (!isLoggedIn) {
     return <AuthForm onSuccess={handleAuthSuccess} />;
   }
 
   if (showBalanceView) {
-    return <BrasetzBalance onSell={handleSell} />;
+    return <BrasetzBalance onSell={handleSell} onBack={handleBackFromBalance} />;
   }
 
   return (

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ArrowLeft } from 'lucide-react';
 
 interface BrasetzBalanceProps {
   onSell: () => void;
+  onBack?: () => void;  // Add onBack prop
 }
 
-export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
+export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }) => {
   const [showBalance, setShowBalance] = useState(false);
   const COIN_VALUE = 0.035;
   const FIXED_KEY = "Brasetz";
@@ -19,6 +21,15 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell }) => {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
+      <Button
+        variant="ghost"
+        className="mb-4"
+        onClick={onBack}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Account
+      </Button>
+
       {!showBalance ? (
         <div className="space-y-4">
           <div className="p-6 bg-card rounded-lg border border-border">
