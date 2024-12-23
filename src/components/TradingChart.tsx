@@ -55,13 +55,12 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
     }
 
     const data = [];
-    let currentValue = coinValue; // Start from coinValue instead of 0
+    let value = 0;
     let volatility = coinValue * 0.02; // 2% volatility
     
     for (let i = 0; i < dataPoints; i++) {
-      // Generate random movement that can go both up and down
-      const movement = (Math.random() - 0.5) * volatility;
-      currentValue = Math.max(currentValue + movement, 0.001); // Prevent negative values but allow downward movement
+      // Ensure price only increases
+      value += volatility * (1 + Math.random() * 0.5);
       
       let label;
       if (format === 'sec') {
@@ -78,12 +77,12 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
       
       data.push({
         time: label,
-        value: showLine ? Number(currentValue.toFixed(3)) : 0, // Limit to 3 decimal places
+        value: showLine ? Number(value.toFixed(3)) : 0, // Limit to 3 decimal places
         volume: volume,
-        high: currentValue + volatility * 0.5,
-        low: currentValue - volatility * 0.5,
-        open: currentValue - volatility * 0.2,
-        close: currentValue + volatility * 0.2
+        high: value + volatility * 0.5,
+        low: value - volatility * 0.5,
+        open: value - volatility * 0.2,
+        close: value + volatility * 0.2
       });
     }
     return data;
