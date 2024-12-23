@@ -37,7 +37,7 @@
 }
 
 .chart-container {
-  @apply w-full h-[400px] bg-card rounded-lg p-4;
+  @apply w-full bg-card rounded-lg p-6 border border-border shadow-lg;
 }
 
 .stat-card {
