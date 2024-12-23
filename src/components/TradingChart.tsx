@@ -8,17 +8,10 @@ interface TradingChartProps {
   showLine?: boolean;
 }
 
-interface ChartDataPoint {
-  time: string;
-  value: number;
-  volume: number;
-}
-
 export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine = true }) => {
   const [timeframe, setTimeframe] = useState('5m');
   const [currentPrice, setCurrentPrice] = useState(coinValue);
-  const [priceChange] = useState({ value: 0.005, percentage: 1.45 });
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [priceChange, setPriceChange] = useState({ value: 0.005, percentage: 1.45 });
   
   const generateData = () => {
     let dataPoints;
@@ -58,7 +51,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
         format = 'min';
     }
 
-    const data: ChartDataPoint[] = [];
+    const data = [];
     let value = 0;
     
     for (let i = 0; i < dataPoints; i++) {
@@ -84,16 +77,10 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
       });
     }
 
+    // Update current price
+    setCurrentPrice(value);
     return data;
   };
-
-  useEffect(() => {
-    const data = generateData();
-    setChartData(data);
-    if (data.length > 0) {
-      setCurrentPrice(data[data.length - 1].value);
-    }
-  }, [timeframe, showLine]);
 
   return (
     <div className="chart-container">
@@ -132,7 +119,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
       
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <ComposedChart data={generateData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
             <XAxis 
               dataKey="time" 
