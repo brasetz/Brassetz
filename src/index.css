@@ -24,9 +24,6 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
     --radius: 0.5rem;
-    --chart-bg: #131722;
-    --text-light: #d1d4dc;
-    --text-dim: #787b86;
   }
 }
 
@@ -40,43 +37,17 @@
 }
 
 .chart-container {
-  @apply w-full rounded-lg p-6 shadow-lg;
-  background: var(--chart-bg);
+  @apply w-full bg-card rounded-lg p-6 border border-border shadow-lg;
 }
 
-.price-info {
-  @apply flex gap-8 mb-6;
+.stat-card {
+  @apply bg-card p-4 rounded-lg border border-border;
 }
 
-.price-item {
-  @apply flex flex-col;
+.nav-link {
+  @apply px-4 py-2 rounded-lg hover:bg-accent transition-colors;
 }
 
-.price-label {
-  @apply text-xs;
-  color: var(--text-dim);
-}
-
-.price-value {
-  @apply text-lg font-medium;
-  color: var(--text-light);
-}
-
-.timeframe-selector {
-  @apply flex gap-1 p-1 rounded-md;
-  background: #2a2e39;
-}
-
-.timeframe-btn {
-  @apply px-3 py-1 rounded text-sm transition-colors;
-  color: var(--text-dim);
-}
-
-.timeframe-btn.active {
-  background: #363a45;
-  color: var(--text-light);
-}
-
-.chart-wrapper {
-  @apply relative h-[400px] mb-4;
+.nav-link.active {
+  @apply bg-accent;
 }
