@@ -55,11 +55,14 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
     }
 
     const data = [];
-    let currentValue = 0;
+    let currentValue = coinValue; // Start from coinValue instead of 0
     let volatility = coinValue * 0.02; // 2% volatility
     
     for (let i = 0; i < dataPoints; i++) {
-      currentValue = coinValue + (Math.random() - 0.5) * volatility;
+      // Generate random movement that can go both up and down
+      const movement = (Math.random() - 0.5) * volatility;
+      currentValue = Math.max(currentValue + movement, 0.001); // Prevent negative values but allow downward movement
+      
       let label;
       if (format === 'sec') {
         label = `${i}s`;
@@ -75,7 +78,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
       
       data.push({
         time: label,
-        value: showLine ? Number(currentValue.toFixed(6)) : 0,
+        value: showLine ? Number(currentValue.toFixed(3)) : 0, // Limit to 3 decimal places
         volume: volume,
         high: currentValue + volatility * 0.5,
         low: currentValue - volatility * 0.5,
@@ -87,7 +90,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
   };
 
   const formatYAxisTick = (value: number): string => {
-    return value.toFixed(6);
+    return value.toFixed(3); // Format Y-axis ticks to 3 decimal places
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
