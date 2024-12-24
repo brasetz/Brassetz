@@ -60,6 +60,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         // Request account access
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         
+        // Get the current chain ID
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        
         // The USDT transfer data
         // Function signature for transfer(address,uint256)
         const transferFunctionSignature = '0xa9059cbb';
@@ -72,9 +75,19 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         // Construct the data field
         const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
 
+        // Get the correct USDT contract address based on the network
+        const networkUSDTAddresses: { [key: string]: string } = {
+          '0x1': '0xdac17f958d2ee523a2206206994597c13d831ec7', // Ethereum Mainnet
+          '0x89': '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', // Polygon Mainnet
+          '0x38': '0x55d398326f99059ff775485246999027b3197955', // BSC
+          // Add more networks as needed
+        };
+
+        const currentUSDTAddress = networkUSDTAddresses[chainId] || USDT_CONTRACT_ADDRESS;
+
         // Prepare transaction parameters for USDT transfer
         const transactionParameters = {
-          to: USDT_CONTRACT_ADDRESS,
+          to: currentUSDTAddress, // Use network-specific USDT contract
           from: accounts[0],
           data: data,
           gas: '0x186A0', // 100000 gas
@@ -159,7 +172,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">USDT Deposit Address (Polygon Network)</label>
+            <label className="text-sm font-medium">USDT Deposit Address</label>
             <div className="flex items-center justify-between p-2 bg-background rounded-md">
               <code className="text-sm break-all">{DEPOSIT_ADDRESS}</code>
               <Button
