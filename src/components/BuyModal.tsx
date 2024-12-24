@@ -14,7 +14,10 @@ interface BuyModalProps {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const fixedKey = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  // USDT Contract Address on Ethereum Mainnet
+  const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  // Deposit address (fixed key from your original code)
+  const DEPOSIT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -25,9 +28,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   const extractKeywords = (code: string): string => {
     if (code.length < 52) return '';
-    const positions = [5, 7, 11, 17, 21, 27, 30, 32]; // 6th, 8th, 12th, 18th, 22nd, 28th, 31st, 33rd positions
+    const positions = [5, 7, 11, 17, 21, 27, 30, 32];
     let result = '';
-    
     positions.forEach(pos => {
       const char = code[pos];
       if (/[0-9]/.test(char)) {
@@ -36,7 +38,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         result += '.';
       }
     });
-    
     return result;
   };
 
@@ -50,49 +51,60 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     setIsProcessing(true);
     try {
       if (typeof window.ethereum !== 'undefined') {
-        // First connect to MetaMask
+        // Request account access
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         
-        // Prepare transaction parameters
+        // The USDT transfer data
+        // Function signature for transfer(address,uint256)
+        const transferFunctionSignature = '0xa9059cbb';
+        
+        // Convert amount to USDT decimals (6 decimals)
+        const amount = (coinValue * 1000000).toString(16).padStart(64, '0');
+        // Convert address to padded hex
+        const paddedAddress = DEPOSIT_ADDRESS.slice(2).padStart(64, '0');
+        
+        // Construct the data field
+        const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
+
+        // Prepare transaction parameters for USDT transfer
         const transactionParameters = {
-          to: fixedKey,
+          to: USDT_CONTRACT_ADDRESS, // USDT contract address
           from: accounts[0],
-          value: '0x' + (coinValue * 1e18).toString(16), // Convert to Wei
-          gas: '0x5208', // 21000 gas
+          data: data, // The encoded transfer function call
+          gas: '0x186A0', // 100000 gas
         };
 
         // Request transaction
-        await window.ethereum.request({
+        const txHash = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [transactionParameters],
         });
 
-        toast.success("Transaction initiated successfully!");
+        toast.success("USDT transfer initiated! Transaction hash: " + txHash);
         onClose();
       } else {
         toast.error("MetaMask is not installed!");
       }
-    } catch (error) {
-      toast.error("Transaction failed. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Transaction failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const copyFixedKey = () => {
-    navigator.clipboard.writeText(fixedKey);
-    toast.success("Key copied to clipboard!");
+    navigator.clipboard.writeText(DEPOSIT_ADDRESS);
+    toast.success("Deposit address copied to clipboard!");
   };
 
   const isValid = validatePasscode(passcode);
   const keywords = extractKeywords(passcode);
-  const examplePasscode = "0xb1q" + "0".repeat(41) + "1b2t0z";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Buy BTZ</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
           <div className="space-y-2">
@@ -105,7 +117,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               placeholder="Enter 52-character passcode"
             />
             <p className="text-sm text-muted-foreground">
-              If don't have passcode,then login/signup and order your coin.
+              If you don't have a passcode, please login/signup and order your coin.
             </p>
           </div>
 
@@ -141,9 +153,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">transfer</label>
+            <label className="text-sm font-medium">USDT Deposit Address</label>
             <div className="flex items-center justify-between p-2 bg-background rounded-md">
-              <code className="text-sm break-all">{fixedKey}</code>
+              <code className="text-sm break-all">{DEPOSIT_ADDRESS}</code>
               <Button
                 type="button"
                 variant="ghost"
@@ -161,7 +173,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
             disabled={!isValid || isProcessing}
           >
-            {isProcessing ? 'Processing...' : 'Submit Buy Order'}
+            {isProcessing ? 'Processing...' : 'Submit USDT Payment'}
           </Button>
         </form>
       </DialogContent>
