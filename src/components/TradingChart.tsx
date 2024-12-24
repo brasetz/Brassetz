@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Line, Bar } from 'recharts';
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Legend } from 'recharts';
-import { Button } from './ui/button';
-import moment from 'moment';
+import { generateChartData } from '../utils/chartUtils';
+import { ChartControls } from './ChartControls';
 
 interface TradingChartProps {
   coinValue: number;
@@ -14,63 +14,10 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
   const [chartType, setChartType] = useState<'line' | 'candle'>('line');
   const [chartData, setChartData] = useState<any[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const generateTimePoints = useCallback((tf: string) => {
-    const points = {
-      '1m': 60,
-      '5m': 60,
-      '15m': 40,
-      '30m': 30,
-      '1h': 24,
-      '1D': 24,
-      '1W': 7,
-      '1M': 30
-    }[tf] || 60;
-
-    const unit = tf.includes('m') ? 'minutes' : 
-                tf.includes('h') ? 'hours' : 
-                tf === '1D' ? 'hours' :
-                tf === '1W' ? 'days' : 'days';
-
-    return Array.from({ length: points }, (_, i) => {
-      return moment().subtract(points - i - 1, unit as moment.unitOfTime.DurationConstructor);
-    });
-  }, []);
-
-  const generateData = useCallback(() => {
-    const timePoints = generateTimePoints(timeframe);
-    const data = [];
-    let baseValue = coinValue * 0.7; // Start at 70% of coin value
-    let volatility = coinValue * 0.02; // 2% volatility
-
-    for (let i = 0; i < timePoints.length; i++) {
-      const time = timePoints[i];
-      
-      // Ensure price trends upward but with realistic fluctuations
-      baseValue += volatility * (Math.random() - 0.3); // Bias towards positive movement
-      const value = Math.max(0, baseValue);
-      
-      const volume = Math.floor(Math.random() * 1000) + 100;
-      
-      data.push({
-        time: time.format(timeframe.includes('m') ? 'HH:mm' : 
-              timeframe.includes('h') ? 'HH:mm' : 
-              timeframe === '1D' ? 'HH:mm' :
-              'MM-DD'),
-        value: Number(value.toFixed(3)),
-        volume,
-        high: value + volatility * 0.5,
-        low: value - volatility * 0.5,
-        open: value - volatility * 0.2,
-        close: value + volatility * 0.2
-      });
-    }
-    return data;
-  }, [timeframe, coinValue]);
 
   useEffect(() => {
     // Initial data generation
-    setChartData(generateData());
+    setChartData(generateChartData(timeframe, coinValue));
 
     // Clear existing interval
     if (intervalRef.current) {
@@ -83,7 +30,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
                          10000; // 10 seconds for day/week/month views
 
     intervalRef.current = setInterval(() => {
-      setChartData(generateData());
+      setChartData(generateChartData(timeframe, coinValue));
     }, updateInterval);
 
     return () => {
@@ -91,7 +38,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
         clearInterval(intervalRef.current);
       }
     };
-  }, [timeframe, generateData]);
+  }, [timeframe, coinValue]);
 
   const formatYAxisTick = (value: number): string => {
     return value.toFixed(3);
@@ -112,45 +59,12 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
 
   return (
     <div className="chart-container bg-[#131722] text-[#d1d4dc]">
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2 bg-[#2a2e39] p-1 rounded-md">
-            {['1m', '5m', '15m', '30m', '1h', '1D', '1W', '1M'].map(time => (
-              <Button
-                key={time}
-                variant={timeframe === time ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTimeframe(time)}
-                className={`text-xs ${
-                  timeframe === time 
-                    ? 'bg-[#363a45] text-[#d1d4dc]' 
-                    : 'text-[#787b86] hover:text-[#d1d4dc]'
-                }`}
-              >
-                {time}
-              </Button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={chartType === 'line' ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setChartType('line')}
-              className="text-xs"
-            >
-              Line
-            </Button>
-            <Button
-              variant={chartType === 'candle' ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setChartType('candle')}
-              className="text-xs"
-            >
-              Candle
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ChartControls
+        timeframe={timeframe}
+        setTimeframe={setTimeframe}
+        chartType={chartType}
+        setChartType={setChartType}
+      />
       
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -163,7 +77,7 @@ export const TradingChart: React.FC<TradingChartProps> = ({ coinValue, showLine 
           <YAxis 
             yAxisId="price"
             orientation="right"
-            domain={['auto', 'auto']}
+            domain={[0, 'auto']}
             tickFormatter={formatYAxisTick}
             stroke="#787b86"
             tick={{ fill: '#787b86' }}
