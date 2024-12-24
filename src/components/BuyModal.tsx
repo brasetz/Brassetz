@@ -14,10 +14,10 @@ interface BuyModalProps {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  // USDT Contract Address on Ethereum Mainnet
-  const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-  // Deposit address (fixed key from your original code)
-  const DEPOSIT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  // USDT Contract Address on Polygon Network
+  const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+  // Deposit address for USDT
+  const DEPOSIT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -59,7 +59,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         const transferFunctionSignature = '0xa9059cbb';
         
         // Convert amount to USDT decimals (6 decimals)
-        const amount = (coinValue * 1000000).toString(16).padStart(64, '0');
+        const usdtAmount = coinValue;
+        const amount = (usdtAmount * 1000000).toString(16).padStart(64, '0');
         // Convert address to padded hex
         const paddedAddress = DEPOSIT_ADDRESS.slice(2).padStart(64, '0');
         
@@ -68,9 +69,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
         // Prepare transaction parameters for USDT transfer
         const transactionParameters = {
-          to: USDT_CONTRACT_ADDRESS, // USDT contract address
+          to: USDT_CONTRACT_ADDRESS,
           from: accounts[0],
-          data: data, // The encoded transfer function call
+          data: data,
           gas: '0x186A0', // 100000 gas
         };
 
@@ -98,7 +99,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const isValid = validatePasscode(passcode);
-  const keywords = extractKeywords(passcode);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -122,14 +122,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Amount</label>
+            <label className="text-sm font-medium">USDT Amount to Deposit</label>
             <div className="flex items-center space-x-2">
               <Input 
                 type="text"
-                value={isValid ? keywords : ''}
+                value={`${coinValue} USDT`}
                 readOnly
                 className="font-mono bg-background"
-                placeholder="Keywords will appear here"
               />
             </div>
           </div>
@@ -153,7 +152,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">USDT Deposit Address</label>
+            <label className="text-sm font-medium">USDT Deposit Address (Polygon Network)</label>
             <div className="flex items-center justify-between p-2 bg-background rounded-md">
               <code className="text-sm break-all">{DEPOSIT_ADDRESS}</code>
               <Button
@@ -173,7 +172,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
             disabled={!isValid || isProcessing}
           >
-            {isProcessing ? 'Processing...' : 'Submit USDT Payment'}
+            {isProcessing ? 'Processing...' : `Submit ${coinValue} USDT Payment`}
           </Button>
         </form>
       </DialogContent>
