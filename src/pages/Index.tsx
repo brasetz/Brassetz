@@ -69,6 +69,7 @@ const Index = () => {
     <div className="min-h-screen p-4 md:p-6">
       <div className="flex flex-col items-center mb-8">
         <img src="/lovable-uploads/ee5cc78f-2502-492c-826b-b334f7770952.png" alt="Brasetz Logo" className="w-16 h-16 mb-2" />
+        <img src="/lovable-uploads/ee5cc78f-2502-492c-826b-b334f7770952.png" alt="Brasetz Logo" className="w-10 h-10 mb-2" />
         <h1 className="text-3xl font-bold">Brasetz</h1>
       </div>
 
