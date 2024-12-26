@@ -11,7 +11,6 @@ import { Wallet } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showChart, setShowChart] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -19,7 +18,6 @@ const Index = () => {
   const COIN_VALUE = 0.035;
 
   useEffect(() => {
-    // Check if wallet is already connected
     const checkWalletConnection = async () => {
       if (typeof window.ethereum !== 'undefined') {
         try {
@@ -69,6 +67,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-6">
+      <div className="flex flex-col items-center mb-8">
+        <img src="/lovable-uploads/ee5cc78f-2502-492c-826b-b334f7770952.png" alt="Brasetz Logo" className="w-16 h-16 mb-2" />
+        <h1 className="text-3xl font-bold">Brasetz</h1>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <nav className="flex space-x-4">
           {['dashboard', 'your account', 'analytics'].map((tab) => (
@@ -120,14 +123,7 @@ const Index = () => {
             />
           </div>
           
-          <Button 
-            onClick={() => setShowChart(true)}
-            className="w-full md:w-auto"
-          >
-            Show Chart
-          </Button>
-          
-          <TradingChart coinValue={COIN_VALUE} showLine={showChart} />
+          <TradingChart coinValue={COIN_VALUE} showLine={true} />
           
           <div className="flex space-x-4">
             <Button
