@@ -68,8 +68,7 @@ const Index = () => {
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="flex flex-col items-center mb-8">
-        <h1 className="text-3xl font-bold"><img src="/lovable-uploads/ee5cc78f-2502-492c-826b-b334f7770952.png" alt="Brasetz Logo" className="w-10 h-10 mb-2" />
- Brasetz</h1>
+        <h1 className="text-3xl font-bold">Brasetz</h1>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
