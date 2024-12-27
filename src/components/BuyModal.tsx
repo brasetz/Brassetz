@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, Copy, X } from "lucide-react";
 import { toast } from "sonner";
+import { StatusDisplay } from './buy/StatusDisplay';
+import { DepositAddress } from './buy/DepositAddress';
+import { validateAmount } from '@/utils/validation';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -14,10 +16,7 @@ interface BuyModalProps {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  // USDT Contract Address on Polygon Network
   const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
-  // Deposit address for USDT
-  const DEPOSIT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -54,46 +53,37 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       return;
     }
 
+    if (!validateAmount(extractedAmount, coinValue)) {
+      toast.error("Amount must be at least double the coin value");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       if (typeof window.ethereum !== 'undefined') {
-        // Request account access
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        // Get the current chain ID
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         
-        // The USDT transfer data
-        // Function signature for transfer(address,uint256)
         const transferFunctionSignature = '0xa9059cbb';
-        
-        // Convert amount to USDT decimals (6 decimals)
         const amount = (parseFloat(extractedAmount) * 1000000).toString(16).padStart(64, '0');
-        // Convert address to padded hex
-        const paddedAddress = DEPOSIT_ADDRESS.slice(2).padStart(64, '0');
-        
-        // Construct the data field
+        const paddedAddress = USDT_CONTRACT_ADDRESS.slice(2).padStart(64, '0');
         const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
 
-        // Get the correct USDT contract address based on the network
         const networkUSDTAddresses: { [key: string]: string } = {
-          '0x1': '0xdac17f958d2ee523a2206206994597c13d831ec7', // Ethereum Mainnet
-          '0x89': '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', // Polygon Mainnet
-          '0x38': '0x55d398326f99059ff775485246999027b3197955', // BSC
-          // Add more networks as needed
+          '0x1': '0xdac17f958d2ee523a2206206994597c13d831ec7',
+          '0x89': '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+          '0x38': '0x55d398326f99059ff775485246999027b3197955',
         };
 
         const currentUSDTAddress = networkUSDTAddresses[chainId] || USDT_CONTRACT_ADDRESS;
 
-        // Prepare transaction parameters for USDT transfer
         const transactionParameters = {
-          to: currentUSDTAddress, // Use network-specific USDT contract
+          to: currentUSDTAddress,
           from: accounts[0],
           data: data,
-          gas: '0x186A0', // 100000 gas
+          gas: '0x186A0',
         };
 
-        // Request transaction
         const txHash = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [transactionParameters],
@@ -111,13 +101,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     }
   };
 
-  const copyFixedKey = () => {
-    navigator.clipboard.writeText(DEPOSIT_ADDRESS);
-    toast.success("Deposit address copied to clipboard!");
-  };
-
   const isValid = validatePasscode(passcode);
   const extractedAmount = extractKeywords(passcode);
+  const isAmountValid = validateAmount(extractedAmount, coinValue);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -153,44 +139,18 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </div>
           </div>
 
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Status</label>
-            <div className="flex items-center space-x-2">
-              {passcode && (
-                <div className="flex items-center space-x-2 bg-background p-2 rounded-md w-full">
-                  <span className={isValid ? 'text-green-500' : 'text-red-500'}>
-                    {isValid ? 'Approved' : 'Not Approved'}
-                  </span>
-                  {isValid ? (
-                    <Check className="text-green-500 h-5 w-5" />
-                  ) : (
-                    <X className="text-red-500 h-5 w-5" />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <StatusDisplay 
+            isValid={isValid} 
+            isAmountValid={isAmountValid}
+            passcode={passcode}
+          />
 
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">USDT Deposit Address</label>
-            <div className="flex items-center justify-between p-2 bg-background rounded-md">
-              <code className="text-sm break-all">{DEPOSIT_ADDRESS}</code>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={copyFixedKey}
-                className="ml-2 flex-shrink-0"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <DepositAddress address={USDT_CONTRACT_ADDRESS} />
 
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            disabled={!isValid || isProcessing}
+            disabled={!isValid || !isAmountValid || isProcessing}
           >
             {isProcessing ? 'Processing...' : `Submit ${extractedAmount} USDT Payment`}
           </Button>
