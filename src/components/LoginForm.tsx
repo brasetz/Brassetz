@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { TradingChart } from './TradingChart';
@@ -27,6 +27,10 @@ export const LoginForm = () => {
 
   const handleRegisterClick = () => {
     window.open('https://forms.office.com/r/irGB2vvvGe', '_blank');
+  };
+
+  const handleBrasetzDIDClick = () => {
+    window.open('https://forms.office.com/r/UB4NycU3Km', '_blank');
   };
 
   if (!isLoggedIn) {
@@ -64,7 +68,7 @@ export const LoginForm = () => {
               <Button 
                 variant="outline"
                 className="w-full border-primary text-primary hover:bg-primary/10"
-                onClick={() => toast.success("Proceeding with Brasetz-DID order...")}
+                onClick={handleBrasetzDIDClick}
               >
                 Order with Brasetz-DID
               </Button>
