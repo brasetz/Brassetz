@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { TradingChart } from './TradingChart';
 import { AuthForm } from './AuthForm';
 import { BrasetzBalance } from './BrasetzBalance';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const LoginForm = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,6 +23,10 @@ export const LoginForm = () => {
 
   const handleBackFromBalance = () => {
     setShowBalanceView(false);
+  };
+
+  const handleRegisterClick = () => {
+    window.open('https://forms.office.com/r/irGB2vvvGe', '_blank');
   };
 
   if (!isLoggedIn) {
@@ -51,27 +54,12 @@ export const LoginForm = () => {
               <span className="font-medium">1 BTZ = ${COIN_VALUE}</span>
             </div>
             <div className="space-y-3">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="w-full bg-primary hover:bg-primary/90">
-                    Register & Order Token
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl h-[80vh]">
-                  <DialogHeader>
-                    <DialogTitle>Token Registration Form</DialogTitle>
-                  </DialogHeader>
-                  <div className="h-full w-full">
-                    <iframe 
-                      width="100%"
-                      height="100%"
-                      src="https://forms.office.com/r/irGB2vvvGe?embed=true"
-                      style={{ border: 'none', maxWidth: '100%', maxHeight: '100%' }}
-                      allowFullScreen
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={handleRegisterClick}
+              >
+                Register & Order Token
+              </Button>
               
               <Button 
                 variant="outline"
