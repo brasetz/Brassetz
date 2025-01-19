@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,6 +26,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [countryCode, setCountryCode] = useState('91');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [dob, setDob] = useState('');
+  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
@@ -75,6 +79,34 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           toast.error("Please enter a valid email address");
           return;
         }
+        if (!address.trim()) {
+          toast.error("Please enter your address");
+          return;
+        }
+        if (!dob) {
+          toast.error("Please enter your date of birth");
+          return;
+        }
+
+        // Submit to Google Apps Script
+        const formData = new FormData();
+        formData.append('Name', username);
+        formData.append('Email', email);
+        formData.append('Mobile', `+${countryCode}${mobile}`);
+        formData.append('Address', address);
+        formData.append('DOB', dob);
+        formData.append('Message', message);
+
+        const response = await fetch('https://script.google.com/macros/s/AKfycbw8Jz81LW555JPi8InP0Xz2jQhd8_uQ2hfml_-tARgI5kq_g831wFdow1hqTGrQeMD8/exec', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+        
+        if (data.result !== 'success') {
+          throw new Error(data.error || 'Failed to submit form');
+        }
         
         const newPassphrase = generatePassphrase();
         setGeneratedPassphrase(newPassphrase);
@@ -88,6 +120,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         onSuccess(passphrase);
         toast.success("Login successful!");
       }
+    } catch (error) {
+      toast.error("Error submitting form. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +159,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 Must be between 3 and 10 characters
               </p>
             </div>
+            
             <div className="flex space-x-2">
               <Select
                 value={countryCode}
@@ -152,11 +187,33 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                 className="flex-1"
               />
             </div>
+
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
+            />
+
+            <Input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Address"
+            />
+
+            <Input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              className="w-full"
+            />
+
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Message (optional)"
+              className="min-h-[100px]"
             />
           </>
         ) : (
