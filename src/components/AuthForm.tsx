@@ -39,15 +39,34 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
-  const generateDID = (name: string, dob: string, city: string, country: string, salt: string) => {
-    const baseString = `${name}${dob}${city}${country}`;
-    const hash = Array.from(baseString).reduce((acc, char) => acc + char.charCodeAt(0), 0).toString(16);
-    return `${hash}0xbtz`;
+  const generateDID = (name: string, dob: string, city: string, salt: string) => {
+    // Remove spaces and special characters from name
+    const cleanName = name.replace(/[^a-zA-Z]/g, '');
+    // Remove dashes from date
+    const cleanDob = dob.replace(/-/g, '');
+    // Remove spaces from city
+    const cleanCity = city.replace(/\s+/g, '');
+    
+    // Combine the values in the specified format
+    const baseString = `${cleanName}${cleanDob}${cleanCity}`;
+    // Add salt and required suffix
+    return `${baseString}${salt}0xbtz`;
   };
 
   const validateLoginPassphrase = (pass: string) => {
     if (!pass.endsWith('0xbtz')) return false;
-    return pass.length >= 20;
+    
+    // Check if the passphrase follows the format: NameDOBCitySalt0xbtz
+    const minLength = 20; // Minimum reasonable length for a valid passphrase
+    if (pass.length < minLength) return false;
+    
+    // Remove the 0xbtz suffix for the main validation
+    const mainPart = pass.slice(0, -5);
+    
+    // Check if the remaining string contains at least some letters (name)
+    // followed by numbers (date) and then more letters (city and salt)
+    const formatRegex = /^[a-zA-Z]+\d{8}[a-zA-Z]+.+$/;
+    return formatRegex.test(mainPart);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,13 +122,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           throw new Error(data.error || 'Failed to submit form');
         }
 
-        const did = generateDID(fullName, dob, city, country, salt);
+        const did = generateDID(fullName, dob, city, salt);
         setGeneratedPassphrase(did);
-        toast.success("Signup successful! Copy your DID");
+        toast.success("Signup successful! Please save your DID");
         onSuccess(did);
       } else {
         if (!validateLoginPassphrase(passphrase)) {
-          toast.error("Invalid DID format");
+          toast.error("Invalid DID format. Please enter a valid DID that ends with '0xbtz'");
           return;
         }
         onSuccess(passphrase);
