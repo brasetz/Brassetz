@@ -19,46 +19,35 @@ const countryCodes = [
   { value: "49", label: "Germany (+49)" },
 ];
 
+const countries = [
+  "USA", "India", "UK", "China", "Japan", "Germany", "France", "Italy", "Canada", "Australia"
+];
+
 export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [passphrase, setPassphrase] = useState('');
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [countryCode, setCountryCode] = useState('91');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
   const [dob, setDob] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('USA');
+  const [salt, setSalt] = useState('');
+  const [address, setAddress] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
+  const generateDID = (name: string, dob: string, city: string, country: string, salt: string) => {
+    const baseString = `${name}${dob}${city}${country}`;
+    const hash = Array.from(baseString).reduce((acc, char) => acc + char.charCodeAt(0), 0).toString(16);
+    return `${hash}0xbtz`;
+  };
+
   const validateLoginPassphrase = (pass: string) => {
-    if (pass.length !== 26) return false;
-    const pattern = /^.{5}021au.*120btz.{3}$/;
-    return pattern.test(pass);
-  };
-
-  const validateEmail = (email: string) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(email);
-  };
-
-  const transformMobileToAlpha = (mobile: string) => {
-    const last7 = mobile.slice(-7);
-    return last7.split('').map(n => 
-      String.fromCharCode(97 + parseInt(n))
-    ).join('');
-  };
-
-  const generatePassphrase = () => {
-    const prefix = Math.random() > 0.5 ? '0b' : '0x';
-    const usernameSuffix = username.slice(-3);
-    const mobileAlpha = transformMobileToAlpha(mobile);
-    const emailPrefix = email.slice(0, 3).toLowerCase();
-    
-    // Generate a passphrase that's exactly 26 characters without spaces
-    const passphrase = `${prefix}${usernameSuffix}021au${mobileAlpha}120btz${emailPrefix}`;
-    return passphrase.replace(/\s+/g, ''); // Remove any spaces
+    if (!pass.endsWith('0xbtz')) return false;
+    return pass.length >= 20;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,34 +56,40 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
     try {
       if (isSignup) {
-        if (username.length < 3 || username.length > 10) {
-          toast.error("Username must be between 3 and 10 characters");
-          return;
-        }
-        if (!mobile || mobile.length < 7) {
-          toast.error("Please enter a valid mobile number");
-          return;
-        }
-        if (!validateEmail(email)) {
-          toast.error("Please enter a valid email address");
-          return;
-        }
-        if (!address.trim()) {
-          toast.error("Please enter your address");
+        if (fullName.length < 3) {
+          toast.error("Please enter your full name");
           return;
         }
         if (!dob) {
           toast.error("Please enter your date of birth");
           return;
         }
+        if (!city) {
+          toast.error("Please enter your city");
+          return;
+        }
+        if (!salt) {
+          toast.error("Please enter a salt value (e.g., childhood school, favorite person)");
+          return;
+        }
+        if (!mobile || mobile.length < 7) {
+          toast.error("Please enter a valid mobile number");
+          return;
+        }
+        if (!email.includes('@')) {
+          toast.error("Please enter a valid email address");
+          return;
+        }
 
         // Submit to Google Apps Script
         const formData = new FormData();
-        formData.append('Name', username);
+        formData.append('Name', fullName);
         formData.append('Email', email);
         formData.append('Mobile', `+${countryCode}${mobile}`);
         formData.append('Address', address);
         formData.append('DOB', dob);
+        formData.append('City', city);
+        formData.append('Country', country);
         formData.append('Message', message);
 
         const response = await fetch('https://script.google.com/macros/s/AKfycbw8Jz81LW555JPi8InP0Xz2jQhd8_uQ2hfml_-tARgI5kq_g831wFdow1hqTGrQeMD8/exec', {
@@ -107,14 +102,14 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         if (data.result !== 'success') {
           throw new Error(data.error || 'Failed to submit form');
         }
-        
-        const newPassphrase = generatePassphrase();
-        setGeneratedPassphrase(newPassphrase);
-        toast.success("Signup successful! Copy your passphrase");
-        onSuccess(newPassphrase);
+
+        const did = generateDID(fullName, dob, city, country, salt);
+        setGeneratedPassphrase(did);
+        toast.success("Signup successful! Copy your DID");
+        onSuccess(did);
       } else {
         if (!validateLoginPassphrase(passphrase)) {
-          toast.error("Invalid passphrase format");
+          toast.error("Invalid DID format");
           return;
         }
         onSuccess(passphrase);
@@ -150,15 +145,51 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <div>
               <Input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username (3-10 characters)"
-                maxLength={10}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Full Name"
+                className="w-full"
               />
-              <p className="text-sm text-muted-foreground mt-1">
-                Must be between 3 and 10 characters
-              </p>
             </div>
+            
+            <Input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              className="w-full"
+            />
+
+            <Input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="City"
+              className="w-full"
+            />
+
+            <Select
+              value={country}
+              onValueChange={setCountry}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countries.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="text"
+              value={salt}
+              onChange={(e) => setSalt(e.target.value)}
+              placeholder="Salt (e.g., childhood school, favorite person)"
+              className="w-full"
+            />
             
             <div className="flex space-x-2">
               <Select
@@ -202,13 +233,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               placeholder="Address"
             />
 
-            <Input
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full"
-            />
-
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -222,9 +246,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               type="password"
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Enter 26-character passphrase"
+              placeholder="Enter your DID"
               className="w-full"
             />
+            <p className="text-sm text-muted-foreground mt-1">
+              Your DID ends with '0xbtz'
+            </p>
           </div>
         )}
 
@@ -239,7 +266,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
       {generatedPassphrase && (
         <div className="mt-4 p-4 bg-green-50 dark:bg-green-900 rounded-lg">
-          <p className="font-medium mb-2">Your Generated Passphrase:</p>
+          <p className="font-medium mb-2">Your Generated DID:</p>
           <div className="flex items-center space-x-2">
             <code className="bg-black/10 p-2 rounded flex-1 break-all">
               {generatedPassphrase}
@@ -247,7 +274,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(generatedPassphrase);
-                toast.success("Passphrase copied!");
+                toast.success("DID copied!");
               }}
               size="sm"
             >
