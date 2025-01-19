@@ -42,16 +42,16 @@ export const LoginForm = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       {userPassphrase && (
         <div className="p-4 bg-muted rounded-lg">
           <p className="text-sm font-medium">Your Passphrase:</p>
-          <code className="block mt-2 p-2 bg-background rounded">{userPassphrase}</code>
+          <code className="block mt-2 p-2 bg-background rounded break-all">{userPassphrase}</code>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-6 bg-card rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold mb-4">Token Registration</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+        <div className="p-4 sm:p-6 bg-card rounded-lg shadow-lg">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">Token Registration</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Price:</span>
@@ -59,7 +59,7 @@ export const LoginForm = () => {
             </div>
             <div className="space-y-3">
               <Button 
-                className="w-full bg-primary hover:bg-primary/90"
+                className="w-full bg-primary hover:bg-primary/90 text-sm sm:text-base"
                 onClick={handleRegisterClick}
               >
                 Register & Order Token
@@ -67,7 +67,7 @@ export const LoginForm = () => {
               
               <Button 
                 variant="outline"
-                className="w-full border-primary text-primary hover:bg-primary/10"
+                className="w-full border-primary text-primary hover:bg-primary/10 text-sm sm:text-base"
                 onClick={handleBrasetzDIDClick}
               >
                 Order with Brasetz-DID
@@ -76,11 +76,11 @@ export const LoginForm = () => {
           </div>
         </div>
 
-        <div className="p-6 bg-card rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold mb-4">View Balance</h2>
+        <div className="p-4 sm:p-6 bg-card rounded-lg shadow-lg">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">View Balance</h2>
           <Button
             onClick={() => setShowBalanceView(true)}
-            className="w-full"
+            className="w-full text-sm sm:text-base"
           >
             Check Brasetz Balance
           </Button>
@@ -88,8 +88,10 @@ export const LoginForm = () => {
       </div>
       
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">Trading Chart</h3>
-        <TradingChart coinValue={COIN_VALUE} showLine={true} />
+        <h3 className="text-xl sm:text-2xl font-semibold mb-4">Trading Chart</h3>
+        <div className="w-full overflow-hidden">
+          <TradingChart coinValue={COIN_VALUE} showLine={true} />
+        </div>
       </div>
     </div>
   );

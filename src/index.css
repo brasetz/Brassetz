@@ -32,22 +32,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground min-h-screen w-full overflow-x-hidden;
   }
 }
 
 .chart-container {
-  @apply w-full bg-card rounded-lg p-6 border border-border shadow-lg;
+  @apply w-full bg-card rounded-lg p-4 sm:p-6 border border-border shadow-lg overflow-hidden;
 }
 
 .stat-card {
-  @apply bg-card p-4 rounded-lg border border-border;
+  @apply bg-card p-3 sm:p-4 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow;
 }
 
 .nav-link {
-  @apply px-4 py-2 rounded-lg hover:bg-accent transition-colors;
+  @apply px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-accent transition-colors text-sm sm:text-base font-medium;
 }
 
 .nav-link.active {
-  @apply bg-accent;
+  @apply bg-accent text-accent-foreground;
+}
+
+/* Responsive text utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .break-word-safe {
+    word-break: break-word;
+  }
 }
