@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AuthFormProps {
@@ -161,6 +161,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     }
   };
 
+  const handleCopyPassphrase = () => {
+    navigator.clipboard.writeText(passphrase);
+    toast.success("Passphrase copied to clipboard!");
+  };
+
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="flex justify-center space-x-4 mb-6">
@@ -280,16 +285,27 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             />
           </>
         ) : (
-          <div>
-            <Input
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="Enter your DID"
-              className="w-full"
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              Your DID ends with '0xbtz'
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="Enter your DID"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleCopyPassphrase}
+                className="shrink-0"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Copy and save securely Brasetz(D-ID) passphrase to seamless access for login
             </p>
           </div>
         )}
@@ -320,6 +336,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               Copy
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Copy and save securely Brasetz(D-ID) passphrase to seamless access for login
+          </p>
         </div>
       )}
     </div>
