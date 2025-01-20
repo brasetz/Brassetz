@@ -39,7 +39,14 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
-  const generateDID = (name: string, dob: string, city: string, salt: string) => {
+  const generateSHA256 = async (text: string): Promise<string> => {
+    const msgBuffer = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const generateDID = async (name: string, dob: string, city: string, salt: string) => {
     // Remove spaces and special characters from name
     const cleanName = name.replace(/[^a-zA-Z]/g, '');
     // Remove dashes from date
@@ -48,25 +55,25 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     const cleanCity = city.replace(/\s+/g, '');
     
     // Combine the values in the specified format
-    const baseString = `${cleanName}${cleanDob}${cleanCity}`;
-    // Add salt and required suffix
-    return `${baseString}${salt}0xbtz`;
+    const baseString = `${cleanName}${cleanDob}${cleanCity}${salt}`;
+    // Generate SHA256 hash
+    const hash = await generateSHA256(baseString);
+    // Return the final format: 0x + hash + 0btz
+    return `0x${hash}0btz`;
   };
 
   const validateLoginPassphrase = (pass: string) => {
-    if (!pass.endsWith('0xbtz')) return false;
+    if (!pass.startsWith('0x')) return false;
+    if (!pass.endsWith('0btz')) return false;
     
-    // Check if the passphrase follows the format: NameDOBCitySalt0xbtz
-    const minLength = 20; // Minimum reasonable length for a valid passphrase
+    // Check minimum length (0x + at least some hash + 0btz)
+    const minLength = 10; // 2 + 5 + 4 minimum
     if (pass.length < minLength) return false;
     
-    // Remove the 0xbtz suffix for the main validation
-    const mainPart = pass.slice(0, -5);
-    
-    // Check if the remaining string contains at least some letters (name)
-    // followed by numbers (date) and then more letters (city and salt)
-    const formatRegex = /^[a-zA-Z]+\d{8}[a-zA-Z]+.+$/;
-    return formatRegex.test(mainPart);
+    // Check if middle part is a valid hex string
+    const middlePart = pass.slice(2, -4);
+    const hexRegex = /^[0-9a-f]+$/i;
+    return hexRegex.test(middlePart);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,13 +129,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           throw new Error(data.error || 'Failed to submit form');
         }
 
-        const did = generateDID(fullName, dob, city, salt);
+        const did = await generateDID(fullName, dob, city, salt);
         setGeneratedPassphrase(did);
         toast.success("Signup successful! Please save your DID");
         onSuccess(did);
       } else {
         if (!validateLoginPassphrase(passphrase)) {
-          toast.error("Invalid DID format. Please enter a valid DID that ends with '0xbtz'");
+          toast.error("Invalid DID format. DID must start with '0x' and end with '0btz'");
           return;
         }
         onSuccess(passphrase);
