@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,14 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
+  useEffect(() => {
+    // Check for existing session
+    const savedPassphrase = localStorage.getItem('userPassphrase');
+    if (savedPassphrase) {
+      onSuccess(savedPassphrase);
+    }
+  }, [onSuccess]);
+
   const generateSHA256 = async (text: string): Promise<string> => {
     const msgBuffer = new TextEncoder().encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -65,10 +73,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const validateLoginPassphrase = (pass: string) => {
     if (!pass.startsWith('0x')) return false;
     if (!pass.endsWith('0btz')) return false;
-    
-    // Check minimum length (0x + at least some hash + 0btz)
-    const minLength = 10; // 2 + 5 + 4 minimum
-    if (pass.length < minLength) return false;
+    if (pass.length !== 70) {
+      return false;
+    }
     
     // Check if middle part is a valid hex string
     const middlePart = pass.slice(2, -4);
@@ -131,13 +138,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
         const did = await generateDID(fullName, dob, city, salt);
         setGeneratedPassphrase(did);
+        localStorage.setItem('userPassphrase', did);
         toast.success("Signup successful! Please save your DID");
         onSuccess(did);
       } else {
         if (!validateLoginPassphrase(passphrase)) {
-          toast.error("Invalid DID format. DID must start with '0x' and end with '0btz'");
+          if (passphrase.length !== 70) {
+            toast.error("Invalid DID length. DID must be exactly 70 characters long");
+          } else {
+            toast.error("Invalid DID format. DID must start with '0x' and end with '0btz'");
+          }
           return;
         }
+        localStorage.setItem('userPassphrase', passphrase);
         onSuccess(passphrase);
         toast.success("Login successful!");
       }
