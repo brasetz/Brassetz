@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { TradingChart } from './TradingChart';
 import { AuthForm } from './AuthForm';
 import { BrasetzBalance } from './BrasetzBalance';
+import { Copy, LogOut } from 'lucide-react';
 
 export const LoginForm = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -33,6 +34,18 @@ export const LoginForm = () => {
     window.open('https://forms.office.com/r/UB4NycU3Km', '_blank');
   };
 
+  const handleDifferentAccount = () => {
+    setIsLoggedIn(false);
+    setUserPassphrase('');
+    localStorage.removeItem('userPassphrase');
+    toast.success("Logged out successfully!");
+  };
+
+  const handleCopyPassphrase = () => {
+    navigator.clipboard.writeText(userPassphrase);
+    toast.success("Passphrase copied to clipboard!");
+  };
+
   if (!isLoggedIn) {
     return <AuthForm onSuccess={handleAuthSuccess} />;
   }
@@ -45,8 +58,21 @@ export const LoginForm = () => {
     <div className="container-fluid py-6 sm:py-8 space-y-6 sm:space-y-8">
       {userPassphrase && (
         <div className="p-4 sm:p-6 bg-muted rounded-lg">
-          <p className="text-sm sm:text-base font-medium">Your Passphrase:</p>
-          <code className="block mt-2 p-2 sm:p-3 bg-background rounded break-all text-sm sm:text-base">{userPassphrase}</code>
+          <div className="flex items-center justify-between">
+            <p className="text-sm sm:text-base font-medium">Your Passphrase:</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyPassphrase}
+              className="ml-2"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
+            </Button>
+          </div>
+          <code className="block mt-2 p-2 sm:p-3 bg-background rounded break-all text-sm sm:text-base">
+            {userPassphrase}
+          </code>
         </div>
       )}
       
@@ -87,13 +113,23 @@ export const LoginForm = () => {
           <div className="absolute -inset-full h-[200%] w-[200%] rotate-45 translate-x-[-100%] transition-all duration-700 bg-gradient-to-tr from-transparent via-white/10 to-transparent group-hover:translate-x-[100%] z-20 pointer-events-none" />
           
           <div className="relative z-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">View Balance</h2>
-            <Button
-              onClick={() => setShowBalanceView(true)}
-              className="w-full text-sm sm:text-base"
-            >
-              Check Brasetz Balance
-            </Button>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4">Account Actions</h2>
+            <div className="space-y-3">
+              <Button
+                onClick={() => setShowBalanceView(true)}
+                className="w-full text-sm sm:text-base"
+              >
+                Check Brasetz Balance
+              </Button>
+              <Button
+                onClick={handleDifferentAccount}
+                variant="outline"
+                className="w-full text-sm sm:text-base"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Different Account
+              </Button>
+            </div>
           </div>
         </div>
       </div>
