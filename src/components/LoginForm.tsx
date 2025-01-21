@@ -1,88 +1,140 @@
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { TradingChart } from './TradingChart';
 import { AuthForm } from './AuthForm';
 import { BrasetzBalance } from './BrasetzBalance';
 import { Copy, LogOut } from 'lucide-react';
+import { Helmet } from 'react-helmet';
+
+// Memoized PassphraseDisplay component
+const PassphraseDisplay = memo(({ 
+  userPassphrase, 
+  onCopy 
+}: { 
+  userPassphrase: string;
+  onCopy: () => void;
+}) => (
+  <div className="p-4 sm:p-6 bg-muted rounded-lg">
+    <div className="flex items-center justify-between">
+      <p className="text-sm sm:text-base font-medium">Your Passphrase:</p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onCopy}
+        className="ml-2"
+      >
+        <Copy className="h-4 w-4 mr-2" />
+        Copy
+      </Button>
+    </div>
+    <code className="block mt-2 p-2 sm:p-3 bg-background rounded break-all text-sm sm:text-base">
+      {userPassphrase}
+    </code>
+  </div>
+));
+
+PassphraseDisplay.displayName = 'PassphraseDisplay';
+
+// Memoized ActionCard component
+const ActionCard = memo(({ 
+  title, 
+  children 
+}: { 
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="p-4 sm:p-6 bg-card rounded-lg shadow-lg group relative overflow-hidden">
+    <div className="absolute -inset-full h-[200%] w-[200%] rotate-45 translate-x-[-100%] transition-all duration-700 bg-gradient-to-tr from-transparent via-white/10 to-transparent group-hover:translate-x-[100%] z-20 pointer-events-none" />
+    <div className="relative z-10">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4">{title}</h2>
+      {children}
+    </div>
+  </div>
+));
+
+ActionCard.displayName = 'ActionCard';
 
 export const LoginForm = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showBalanceView, setShowBalanceView] = useState(false);
   const [userPassphrase, setUserPassphrase] = useState('');
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const COIN_VALUE = 0.035;
-  
-  const handleAuthSuccess = (passphrase: string) => {
+
+  // Memoized handlers
+  const handleAuthSuccess = useCallback((passphrase: string) => {
     setIsLoggedIn(true);
     setUserPassphrase(passphrase);
-  };
+  }, []);
 
-  const handleSell = () => {
+  const handleSell = useCallback(() => {
     toast.success("Sell order placed successfully!");
-  };
+  }, []);
 
-  const handleBackFromBalance = () => {
+  const handleBackFromBalance = useCallback(() => {
     setShowBalanceView(false);
-  };
+  }, []);
 
-  const handleRegisterClick = () => {
+  const handleRegisterClick = useCallback(() => {
     window.open('https://forms.office.com/r/irGB2vvvGe', '_blank');
-  };
+  }, []);
 
-  const handleBrasetzDIDClick = () => {
+  const handleBrasetzDIDClick = useCallback(() => {
     window.open('https://forms.office.com/r/UB4NycU3Km', '_blank');
-  };
+  }, []);
 
-  const handleDifferentAccount = () => {
+  const handleDifferentAccount = useCallback(() => {
     setIsLoggedIn(false);
     setUserPassphrase('');
     localStorage.removeItem('userPassphrase');
     toast.success("Logged out successfully!");
-  };
+  }, []);
 
-  const handleCopyPassphrase = () => {
+  const handleCopyPassphrase = useCallback(() => {
     navigator.clipboard.writeText(userPassphrase);
     toast.success("Passphrase copied to clipboard!");
-  };
+  }, [userPassphrase]);
 
   if (!isLoggedIn) {
-    return <AuthForm onSuccess={handleAuthSuccess} />;
+    return (
+      <>
+        <Helmet>
+          <title>Login - Brasetz Trading Platform</title>
+          <meta name="description" content="Secure login to your Brasetz trading account. Access your portfolio and start trading." />
+        </Helmet>
+        <AuthForm onSuccess={handleAuthSuccess} />
+      </>
+    );
   }
 
   if (showBalanceView) {
-    return <BrasetzBalance onSell={handleSell} onBack={handleBackFromBalance} />;
+    return (
+      <>
+        <Helmet>
+          <title>Balance - Brasetz Trading Platform</title>
+          <meta name="description" content="View your Brasetz balance and trading history." />
+        </Helmet>
+        <BrasetzBalance onSell={handleSell} onBack={handleBackFromBalance} />
+      </>
+    );
   }
 
   return (
-    <div className="container-fluid py-6 sm:py-8 space-y-6 sm:space-y-8">
-      {userPassphrase && (
-        <div className="p-4 sm:p-6 bg-muted rounded-lg">
-          <div className="flex items-center justify-between">
-            <p className="text-sm sm:text-base font-medium">Your Passphrase:</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyPassphrase}
-              className="ml-2"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </Button>
-          </div>
-          <code className="block mt-2 p-2 sm:p-3 bg-background rounded break-all text-sm sm:text-base">
-            {userPassphrase}
-          </code>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-        <div className="p-4 sm:p-6 bg-card rounded-lg shadow-lg group relative overflow-hidden">
-          {/* Glassy ray effect overlay */}
-          <div className="absolute -inset-full h-[200%] w-[200%] rotate-45 translate-x-[-100%] transition-all duration-700 bg-gradient-to-tr from-transparent via-white/10 to-transparent group-hover:translate-x-[100%] z-20 pointer-events-none" />
-          
-          <div className="relative z-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">Token Registration</h2>
+    <>
+      <Helmet>
+        <title>Dashboard - Brasetz Trading Platform</title>
+        <meta name="description" content="Manage your Brasetz tokens, view trading charts, and access account features." />
+      </Helmet>
+      <div className="container-fluid py-6 sm:py-8 space-y-6 sm:space-y-8">
+        {userPassphrase && (
+          <PassphraseDisplay 
+            userPassphrase={userPassphrase} 
+            onCopy={handleCopyPassphrase}
+          />
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          <ActionCard title="Token Registration">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Price:</span>
@@ -105,15 +157,9 @@ export const LoginForm = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </ActionCard>
 
-        <div className="p-4 sm:p-6 bg-card rounded-lg shadow-lg group relative overflow-hidden">
-          {/* Glassy ray effect overlay */}
-          <div className="absolute -inset-full h-[200%] w-[200%] rotate-45 translate-x-[-100%] transition-all duration-700 bg-gradient-to-tr from-transparent via-white/10 to-transparent group-hover:translate-x-[100%] z-20 pointer-events-none" />
-          
-          <div className="relative z-10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">Account Actions</h2>
+          <ActionCard title="Account Actions">
             <div className="space-y-3">
               <Button
                 onClick={() => setShowBalanceView(true)}
@@ -130,16 +176,16 @@ export const LoginForm = () => {
                 Different Account
               </Button>
             </div>
+          </ActionCard>
+        </div>
+        
+        <div className="mt-8 sm:mt-12">
+          <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Trading Chart</h3>
+          <div className="w-full overflow-hidden rounded-lg">
+            <TradingChart coinValue={COIN_VALUE} showLine={true} />
           </div>
         </div>
       </div>
-      
-      <div className="mt-8 sm:mt-12">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Trading Chart</h3>
-        <div className="w-full overflow-hidden rounded-lg">
-          <TradingChart coinValue={COIN_VALUE} showLine={true} />
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
