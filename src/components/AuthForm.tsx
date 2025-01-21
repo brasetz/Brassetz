@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Copy, UserPlus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AuthFormProps {
@@ -161,53 +161,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const handleCopyPassphrase = () => {
-    navigator.clipboard.writeText(generatedPassphrase);
-    toast.success("Passphrase copied to clipboard!");
-  };
-
-  const handleDifferentAccount = () => {
-    localStorage.removeItem('userPassphrase');
-    setIsSignup(false);
-    setPassphrase('');
-    setFullName('');
-    setCountryCode('91');
-    setMobile('');
-    setEmail('');
-    setDob('');
-    setCity('');
-    setCountry('USA');
-    setSalt('');
-    setAddress('');
-    setMessage('');
-    setGeneratedPassphrase('');
-  };
-
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex space-x-4">
-          <Button
-            variant={isSignup ? "outline" : "default"}
-            onClick={() => setIsSignup(false)}
-          >
-            Login
-          </Button>
-          <Button
-            variant={!isSignup ? "outline" : "default"}
-            onClick={() => setIsSignup(true)}
-          >
-            Sign Up
-          </Button>
-        </div>
+      <div className="flex justify-center space-x-4 mb-6">
         <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDifferentAccount}
-          className="flex items-center gap-2"
+          variant={isSignup ? "outline" : "default"}
+          onClick={() => setIsSignup(false)}
         >
-          <UserPlus className="h-4 w-4" />
-          Different Account
+          Login
+        </Button>
+        <Button
+          variant={!isSignup ? "outline" : "default"}
+          onClick={() => setIsSignup(true)}
+        >
+          Sign Up
         </Button>
       </div>
 
@@ -313,18 +280,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             />
           </>
         ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Enter your DID"
-                className="flex-1"
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Copy and save securely Brasetz(D-ID) passphrase to seamless access for login
+          <div>
+            <Input
+              type="password"
+              value={passphrase}
+              onChange={(e) => setPassphrase(e.target.value)}
+              placeholder="Enter your DID"
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Your DID ends with '0xbtz'
             </p>
           </div>
         )}
@@ -346,16 +311,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               {generatedPassphrase}
             </code>
             <Button
-              onClick={handleCopyPassphrase}
+              onClick={() => {
+                navigator.clipboard.writeText(generatedPassphrase);
+                toast.success("DID copied!");
+              }}
               size="sm"
             >
-              <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Copy and save securely Brasetz(D-ID) passphrase to seamless access for login
-          </p>
         </div>
       )}
     </div>
