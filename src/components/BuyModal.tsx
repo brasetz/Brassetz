@@ -197,16 +197,16 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       const accounts = await window.ethereum!.request({ method: 'eth_requestAccounts' });
       const amount = web3Instance.utils.toWei(extractedAmount, 'ether');
 
-      // Use transferFrom method from the contract
-      const tx = await contract.methods.transferFrom(accounts[0], USDT_PAYMENT_PROCESSOR_ADDRESS, amount).send({
+      // Use processPayment method from the contract
+      const tx = await contract.methods.processPayment(amount).send({
         from: accounts[0]
       });
 
       setCurrentTxHash(tx.transactionHash);
       toast.success("Payment processed successfully!");
 
-      // Get payment status using allowance
-      const status = await contract.methods.allowance(accounts[0], USDT_PAYMENT_PROCESSOR_ADDRESS).call();
+      // Get payment status
+      const status = await contract.methods.getPaymentStatus(accounts[0]).call();
       console.log('Payment status:', web3Instance.utils.fromWei(status, 'ether'), 'USDT');
 
       onClose();
