@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
+import Web3 from 'web3';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState<string>('polygon');
+  const [web3Instance, setWeb3Instance] = useState<Web3 | null>(null);
   
   const networks: { [key: string]: NetworkConfig } = {
     polygon: {
@@ -70,6 +73,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     }
   };
 
+  useEffect(() => {
+    if (typeof window.ethereum !== 'undefined') {
+      const web3 = new Web3(window.ethereum);
+      setWeb3Instance(web3);
+    }
+  }, []);
+
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
     if (!code.startsWith('0xb1q')) return false;
@@ -93,8 +103,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const switchNetwork = async (networkConfig: NetworkConfig) => {
+    if (!window.ethereum) {
+      toast.error("Please install MetaMask!");
+      return false;
+    }
+
     try {
-      await window.ethereum?.request({
+      await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: networkConfig.chainId }],
       });
@@ -102,13 +117,14 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         try {
-          await window.ethereum?.request({
+          await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [networkConfig],
           });
           return true;
         } catch (addError) {
           console.error('Error adding network:', addError);
+          toast.error("Failed to add network. Please try again.");
           return false;
         }
       }
@@ -118,6 +134,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const checkUSDTBalance = async (address: string, usdtAddress: string, amount: string) => {
+    if (!web3Instance) {
+      toast.error("Web3 not initialized");
+      return false;
+    }
+
     try {
       const abiFragment = [
         {
@@ -129,13 +150,21 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         }
       ];
 
-      const contract = new window.web3.eth.Contract(abiFragment, usdtAddress);
+      const contract = new web3Instance.eth.Contract(abiFragment, usdtAddress);
       const balance = await contract.methods.balanceOf(address).call();
       const requiredAmount = parseFloat(amount) * 1e6; // USDT has 6 decimals
       return BigInt(balance) >= BigInt(requiredAmount);
     } catch (error) {
       console.error('Error checking USDT balance:', error);
       return false;
+    }
+  };
+
+  const handleNetworkChange = async (networkKey: string) => {
+    const networkConfig = networks[networkKey];
+    if (await switchNetwork(networkConfig)) {
+      setSelectedNetwork(networkKey);
+      toast.success(`Switched to ${networkConfig.chainName}`);
     }
   };
 
@@ -157,19 +186,12 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       if (typeof window.ethereum !== 'undefined') {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         
-        // Try to switch to Polygon first (preferred network)
-        const networkSwitched = await switchNetwork(networks.polygon);
-        if (!networkSwitched) {
-          toast.error("Failed to switch network. Please try again.");
-          setIsProcessing(false);
-          return;
-        }
-
+        // Get current network
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         const currentNetwork = Object.values(networks).find(n => n.chainId === chainId);
         
         if (!currentNetwork) {
-          toast.error("Unsupported network");
+          toast.error("Please select a supported network");
           setIsProcessing(false);
           return;
         }
@@ -205,7 +227,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         });
 
         setCurrentTxHash(txHash);
-        toast.success("USDT transfer initiated! Transaction hash: " + txHash);
+        toast.success("USDT transfer initiated!");
         
         // Monitor transaction status
         const interval = setInterval(async () => {
@@ -245,10 +267,27 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT</DialogTitle>
           <DialogDescription>
-            Transaction will be processed on Polygon Network (MATIC)
+            Select your preferred network for the transaction
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Network</label>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(networks).map(([key, network]) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant={selectedNetwork === key ? "default" : "outline"}
+                  onClick={() => handleNetworkChange(key)}
+                  className="w-full"
+                >
+                  {network.nativeCurrency.symbol}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Passcode</label>
             <Input
@@ -258,22 +297,17 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               className="font-mono"
               placeholder="Enter 52-character passcode"
             />
-            <p className="text-sm text-muted-foreground">
-              If you don't have a passcode, please login/signup and order your coin.
-            </p>
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Required USDT Deposit Amount</label>
-            <div className="flex items-center space-x-2">
-              <Input 
-                type="text"
-                value={isValid ? `${extractedAmount} USDT` : ''}
-                readOnly
-                className="font-mono bg-background"
-                placeholder="Amount will appear here"
-              />
-            </div>
+            <label className="text-sm font-medium">Required USDT Amount</label>
+            <Input 
+              type="text"
+              value={isValid ? `${extractedAmount} USDT` : ''}
+              readOnly
+              className="font-mono bg-background"
+              placeholder="Amount will appear here"
+            />
           </div>
 
           <StatusDisplay 
@@ -282,13 +316,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             passcode={passcode}
           />
 
-          <DepositAddress address={networks.polygon.usdtAddress} />
+          <DepositAddress address={networks[selectedNetwork].usdtAddress} />
 
           {currentTxHash && (
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <label className="text-sm font-medium">Transaction Status</label>
               <a 
-                href={`${networks.polygon.blockExplorerUrls[0]}tx/${currentTxHash}`}
+                href={`${networks[selectedNetwork].blockExplorerUrls[0]}tx/${currentTxHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:text-blue-600 break-all"
