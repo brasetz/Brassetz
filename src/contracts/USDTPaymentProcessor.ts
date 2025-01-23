@@ -1,3 +1,5 @@
+import { AbiItem } from 'web3-utils';
+
 export const USDT_PAYMENT_PROCESSOR_ADDRESS = '0x6caEf55b06e147c6C4F0a606792377F92a284f78';
 
 export const USDT_PAYMENT_PROCESSOR_ABI = [
@@ -78,4 +80,4 @@ export const USDT_PAYMENT_PROCESSOR_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   }
-] as const;
+] as AbiItem[];

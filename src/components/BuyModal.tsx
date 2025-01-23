@@ -9,7 +9,7 @@ import { validateAmount } from '@/utils/validation';
 import Web3 from 'web3';
 import { USDT_PAYMENT_PROCESSOR_ADDRESS, USDT_PAYMENT_PROCESSOR_ABI } from '@/contracts/USDTPaymentProcessor';
 import type { Contract } from 'web3-eth-contract';
-import type { AbiItem } from 'web3-utils';
+import { Loader2 } from 'lucide-react';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -33,11 +33,12 @@ interface NetworkConfig {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isNetworkSwitching, setIsNetworkSwitching] = useState(false);
   const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<string>('polygon');
   const [web3Instance, setWeb3Instance] = useState<Web3 | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
-  
+
   const networks: { [key: string]: NetworkConfig } = {
     polygon: {
       chainId: '0x89',
@@ -83,7 +84,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       setWeb3Instance(web3);
       
       const contractInstance = new web3.eth.Contract(
-        USDT_PAYMENT_PROCESSOR_ABI as AbiItem[],
+        USDT_PAYMENT_PROCESSOR_ABI,
         USDT_PAYMENT_PROCESSOR_ADDRESS
       );
       setContract(contractInstance);
@@ -119,6 +120,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     }
 
     try {
+      setIsNetworkSwitching(true);
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: networkConfig.chainId }],
@@ -127,9 +129,17 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         try {
+          const params = {
+            chainId: networkConfig.chainId,
+            chainName: networkConfig.chainName,
+            nativeCurrency: networkConfig.nativeCurrency,
+            rpcUrls: networkConfig.rpcUrls,
+            blockExplorerUrls: networkConfig.blockExplorerUrls
+          };
+          
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [networkConfig],
+            params: [params],
           });
           return true;
         } catch (addError) {
@@ -140,22 +150,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       }
       console.error('Error switching network:', switchError);
       return false;
-    }
-  };
-
-  const checkUSDTBalance = async (address: string, usdtAddress: string, amount: string) => {
-    if (!web3Instance || !contract) {
-      toast.error("Web3 not initialized");
-      return false;
-    }
-
-    try {
-      const allowance = await contract.methods.allowance(address, USDT_PAYMENT_PROCESSOR_ADDRESS).call();
-      const requiredAmount = web3Instance.utils.toWei(amount, 'ether');
-      return BigInt(allowance) >= BigInt(requiredAmount);
-    } catch (error) {
-      console.error('Error checking USDT allowance:', error);
-      return false;
+    } finally {
+      setIsNetworkSwitching(false);
     }
   };
 
@@ -165,13 +161,12 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       setSelectedNetwork(networkKey);
       toast.success(`Switched to ${networkConfig.chainName}`);
       
-      // Reinitialize web3 and contract with new network
       if (typeof window.ethereum !== 'undefined') {
         const web3 = new Web3(window.ethereum as any);
         setWeb3Instance(web3);
         
         const contractInstance = new web3.eth.Contract(
-          USDT_PAYMENT_PROCESSOR_ABI as AbiItem[],
+          USDT_PAYMENT_PROCESSOR_ABI,
           USDT_PAYMENT_PROCESSOR_ADDRESS
         );
         setContract(contractInstance);
@@ -202,16 +197,16 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       const accounts = await window.ethereum!.request({ method: 'eth_requestAccounts' });
       const amount = web3Instance.utils.toWei(extractedAmount, 'ether');
 
-      // Process payment through the smart contract
-      const tx = await contract.methods.processPayment(amount).send({
+      // Use transferFrom method from the contract
+      const tx = await contract.methods.transferFrom(accounts[0], USDT_PAYMENT_PROCESSOR_ADDRESS, amount).send({
         from: accounts[0]
       });
 
       setCurrentTxHash(tx.transactionHash);
       toast.success("Payment processed successfully!");
 
-      // Get payment status
-      const status = await contract.methods.getPaymentStatus(accounts[0]).call();
+      // Get payment status using allowance
+      const status = await contract.methods.allowance(accounts[0], USDT_PAYMENT_PROCESSOR_ADDRESS).call();
       console.log('Payment status:', web3Instance.utils.fromWei(status, 'ether'), 'USDT');
 
       onClose();
@@ -246,8 +241,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                   variant={selectedNetwork === key ? "default" : "outline"}
                   onClick={() => handleNetworkChange(key)}
                   className="w-full"
+                  disabled={isNetworkSwitching}
                 >
-                  {network.nativeCurrency.symbol}
+                  {isNetworkSwitching ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    network.nativeCurrency.symbol
+                  )}
                 </Button>
               ))}
             </div>
