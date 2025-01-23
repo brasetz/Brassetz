@@ -7,6 +7,9 @@ import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
 import Web3 from 'web3';
+import { USDT_PAYMENT_PROCESSOR_ADDRESS, USDT_PAYMENT_PROCESSOR_ABI } from '@/contracts/USDTPaymentProcessor';
+import type { Contract } from 'web3-eth-contract';
+import type { AbiItem } from 'web3-utils';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -33,6 +36,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<string>('polygon');
   const [web3Instance, setWeb3Instance] = useState<Web3 | null>(null);
+  const [contract, setContract] = useState<Contract | null>(null);
   
   const networks: { [key: string]: NetworkConfig } = {
     polygon: {
@@ -75,8 +79,14 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
   useEffect(() => {
     if (typeof window.ethereum !== 'undefined') {
-      const web3 = new Web3(window.ethereum);
+      const web3 = new Web3(window.ethereum as any);
       setWeb3Instance(web3);
+      
+      const contractInstance = new web3.eth.Contract(
+        USDT_PAYMENT_PROCESSOR_ABI as AbiItem[],
+        USDT_PAYMENT_PROCESSOR_ADDRESS
+      );
+      setContract(contractInstance);
     }
   }, []);
 
@@ -134,28 +144,17 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const checkUSDTBalance = async (address: string, usdtAddress: string, amount: string) => {
-    if (!web3Instance) {
+    if (!web3Instance || !contract) {
       toast.error("Web3 not initialized");
       return false;
     }
 
     try {
-      const abiFragment = [
-        {
-          name: 'balanceOf',
-          type: 'function',
-          inputs: [{ name: 'account', type: 'address' }],
-          outputs: [{ name: 'balance', type: 'uint256' }],
-          stateMutability: 'view'
-        }
-      ];
-
-      const contract = new web3Instance.eth.Contract(abiFragment, usdtAddress);
-      const balance = await contract.methods.balanceOf(address).call();
-      const requiredAmount = parseFloat(amount) * 1e6; // USDT has 6 decimals
-      return BigInt(balance) >= BigInt(requiredAmount);
+      const allowance = await contract.methods.allowance(address, USDT_PAYMENT_PROCESSOR_ADDRESS).call();
+      const requiredAmount = web3Instance.utils.toWei(amount, 'ether');
+      return BigInt(allowance) >= BigInt(requiredAmount);
     } catch (error) {
-      console.error('Error checking USDT balance:', error);
+      console.error('Error checking USDT allowance:', error);
       return false;
     }
   };
@@ -165,6 +164,18 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (await switchNetwork(networkConfig)) {
       setSelectedNetwork(networkKey);
       toast.success(`Switched to ${networkConfig.chainName}`);
+      
+      // Reinitialize web3 and contract with new network
+      if (typeof window.ethereum !== 'undefined') {
+        const web3 = new Web3(window.ethereum as any);
+        setWeb3Instance(web3);
+        
+        const contractInstance = new web3.eth.Contract(
+          USDT_PAYMENT_PROCESSOR_ABI as AbiItem[],
+          USDT_PAYMENT_PROCESSOR_ADDRESS
+        );
+        setContract(contractInstance);
+      }
     }
   };
 
@@ -183,73 +194,27 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
     setIsProcessing(true);
     try {
-      if (typeof window.ethereum !== 'undefined') {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        // Get current network
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        const currentNetwork = Object.values(networks).find(n => n.chainId === chainId);
-        
-        if (!currentNetwork) {
-          toast.error("Please select a supported network");
-          setIsProcessing(false);
-          return;
-        }
-
-        // Check USDT balance
-        const hasEnoughUSDT = await checkUSDTBalance(
-          accounts[0],
-          currentNetwork.usdtAddress,
-          extractedAmount
-        );
-
-        if (!hasEnoughUSDT) {
-          toast.error("Insufficient USDT balance. Please swap some tokens first.");
-          setIsProcessing(false);
-          return;
-        }
-
-        const transferFunctionSignature = '0xa9059cbb';
-        const amount = (parseFloat(extractedAmount) * 1000000).toString(16).padStart(64, '0');
-        const paddedAddress = currentNetwork.usdtAddress.slice(2).padStart(64, '0');
-        const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
-
-        const transactionParameters = {
-          to: currentNetwork.usdtAddress,
-          from: accounts[0],
-          data: data,
-          gas: '0x186A0',
-        };
-
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [transactionParameters],
-        });
-
-        setCurrentTxHash(txHash);
-        toast.success("USDT transfer initiated!");
-        
-        // Monitor transaction status
-        const interval = setInterval(async () => {
-          const receipt = await window.ethereum.request({
-            method: 'eth_getTransactionReceipt',
-            params: [txHash],
-          });
-          
-          if (receipt) {
-            clearInterval(interval);
-            if (receipt.status === '0x1') {
-              toast.success("Payment confirmed!");
-            } else {
-              toast.error("Transaction failed!");
-            }
-          }
-        }, 5000);
-
-        onClose();
-      } else {
-        toast.error("MetaMask is not installed!");
+      if (!web3Instance || !contract) {
+        toast.error("Web3 not initialized");
+        return;
       }
+
+      const accounts = await window.ethereum!.request({ method: 'eth_requestAccounts' });
+      const amount = web3Instance.utils.toWei(extractedAmount, 'ether');
+
+      // Process payment through the smart contract
+      const tx = await contract.methods.processPayment(amount).send({
+        from: accounts[0]
+      });
+
+      setCurrentTxHash(tx.transactionHash);
+      toast.success("Payment processed successfully!");
+
+      // Get payment status
+      const status = await contract.methods.getPaymentStatus(accounts[0]).call();
+      console.log('Payment status:', web3Instance.utils.fromWei(status, 'ether'), 'USDT');
+
+      onClose();
     } catch (error: any) {
       toast.error(error.message || "Transaction failed. Please try again.");
     } finally {
