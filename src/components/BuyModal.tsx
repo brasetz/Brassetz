@@ -7,6 +7,7 @@ import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
 import { convertUSDTtoINR } from '@/utils/currencyConverter';
+import { ArrowLeft } from 'lucide-react';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -129,9 +130,15 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       return;
     }
     
-    // Here you would typically verify the transaction
     toast.success("Transaction confirmed! ID: " + transactionId);
     onClose();
+  };
+
+  const handleBack = () => {
+    setShowUPIDetails(false);
+    setShowTxInput(false);
+    setTransactionId('');
+    setInrAmount(null);
   };
 
   const isValid = validatePasscode(passcode);
@@ -142,50 +149,62 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT/UPI</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">
+            {showUPIDetails ? (
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-4"
+                  onClick={handleBack}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                UPI Payment Details
+              </div>
+            ) : (
+              'Buy BTZ with USDT/UPI'
+            )}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Passcode</label>
-            <Input
-              type="text"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              className="font-mono"
-              placeholder="Enter 52-character passcode"
-            />
-            <p className="text-sm text-muted-foreground">
-              If you don't have a passcode, please login/signup and order your coin.
-            </p>
-          </div>
-
-          <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Required USDT Deposit Amount</label>
-            <div className="flex items-center space-x-2">
-              <Input 
-                type="text"
-                value={isValid ? `${extractedAmount} USDT` : ''}
-                readOnly
-                className="font-mono bg-background"
-                placeholder="Amount will appear here"
-              />
-            </div>
-            {inrAmount && showUPIDetails && (
-              <div className="mt-2 text-sm">
-                ≈ ₹{inrAmount.toFixed(2)} INR
-              </div>
-            )}
-          </div>
-
-          <StatusDisplay 
-            isValid={isValid} 
-            isAmountValid={isAmountValid}
-            passcode={passcode}
-          />
-
-          {!showUPIDetails && (
+          {!showUPIDetails ? (
             <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Passcode</label>
+                <Input
+                  type="text"
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  className="font-mono"
+                  placeholder="Enter 52-character passcode"
+                />
+                <p className="text-sm text-muted-foreground">
+                  If you don't have a passcode, please login/signup and order your coin.
+                </p>
+              </div>
+
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <label className="text-sm font-medium">Required USDT Deposit Amount</label>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    type="text"
+                    value={isValid ? `${extractedAmount} USDT` : ''}
+                    readOnly
+                    className="font-mono bg-background"
+                    placeholder="Amount will appear here"
+                  />
+                </div>
+              </div>
+
+              <StatusDisplay 
+                isValid={isValid} 
+                isAmountValid={isAmountValid}
+                passcode={passcode}
+              />
+
               <DepositAddress address={USDT_CONTRACT_ADDRESS} />
+              
               <div className="space-y-2">
                 <Button 
                   type="submit" 
@@ -204,9 +223,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                 </Button>
               </div>
             </>
-          )}
-
-          {showUPIDetails && (
+          ) : (
             <div className="space-y-4">
               <div className="text-center">
                 <img 
