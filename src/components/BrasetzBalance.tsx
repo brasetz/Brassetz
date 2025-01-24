@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { BackButton } from "./ui/back-button";
 
 interface BrasetzBalanceProps {
   onSell: () => void;
@@ -47,16 +47,18 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
     }
   };
 
+  const handleBack = () => {
+    if (showBalance) {
+      setShowBalance(false);
+      setPasscode('');
+      return;
+    }
+    onBack?.();
+  };
+
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={onBack}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Account
-      </Button>
+      <BackButton onClick={handleBack} label={showBalance ? "Back to Passcode" : "Back to Account"} />
 
       {!showBalance ? (
         <div className="space-y-4">
