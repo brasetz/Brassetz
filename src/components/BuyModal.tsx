@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
+import { convertUSDTtoINR } from '@/utils/currencyConverter';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -16,7 +17,12 @@ interface BuyModalProps {
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showUPIDetails, setShowUPIDetails] = useState(false);
+  const [inrAmount, setInrAmount] = useState<number | null>(null);
+  const [showTxInput, setShowTxInput] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
   const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+  const UPI_ID = 'deepaks5559@fifederal';
   
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -101,6 +107,33 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     }
   };
 
+  const handleUPISubmit = async () => {
+    const extractedAmount = extractKeywords(passcode);
+    if (!extractedAmount) {
+      toast.error("Could not extract valid amount from passcode");
+      return;
+    }
+
+    try {
+      const inrValue = await convertUSDTtoINR(extractedAmount);
+      setInrAmount(inrValue);
+      setShowUPIDetails(true);
+    } catch (error) {
+      toast.error("Failed to convert currency. Please try again.");
+    }
+  };
+
+  const handleConfirmTransaction = () => {
+    if (!transactionId) {
+      toast.error("Please enter the transaction ID");
+      return;
+    }
+    
+    // Here you would typically verify the transaction
+    toast.success("Transaction confirmed! ID: " + transactionId);
+    onClose();
+  };
+
   const isValid = validatePasscode(passcode);
   const extractedAmount = extractKeywords(passcode);
   const isAmountValid = validateAmount(extractedAmount, coinValue);
@@ -109,7 +142,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT/UPI</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
           <div className="space-y-2">
@@ -137,6 +170,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                 placeholder="Amount will appear here"
               />
             </div>
+            {inrAmount && showUPIDetails && (
+              <div className="mt-2 text-sm">
+                ≈ ₹{inrAmount.toFixed(2)} INR
+              </div>
+            )}
           </div>
 
           <StatusDisplay 
@@ -145,15 +183,72 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             passcode={passcode}
           />
 
-          <DepositAddress address={USDT_CONTRACT_ADDRESS} />
+          {!showUPIDetails && (
+            <>
+              <DepositAddress address={USDT_CONTRACT_ADDRESS} />
+              <div className="space-y-2">
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                  disabled={!isValid || !isAmountValid || isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : `Submit ${extractedAmount} USDT Payment`}
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={handleUPISubmit}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                  disabled={!isValid || !isAmountValid || isProcessing}
+                >
+                  Submit by UPI
+                </Button>
+              </div>
+            </>
+          )}
 
-          <Button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            disabled={!isValid || !isAmountValid || isProcessing}
-          >
-            {isProcessing ? 'Processing...' : `Submit ${extractedAmount} USDT Payment`}
-          </Button>
+          {showUPIDetails && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <img 
+                  src="/lovable-uploads/dd7c985a-7ba3-4311-8263-5d45ee69e631.png" 
+                  alt="UPI QR Code"
+                  className="mx-auto w-48 h-48 object-contain"
+                />
+                <p className="mt-2 font-medium">UPI ID: {UPI_ID}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Scan this QR code and deposit ₹{inrAmount?.toFixed(2)}. Once deposited, click confirm below.
+                </p>
+              </div>
+
+              {!showTxInput ? (
+                <Button
+                  type="button"
+                  onClick={() => setShowTxInput(true)}
+                  className="w-full"
+                >
+                  Confirm Payment
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="Enter UPI Transaction ID"
+                    className="w-full"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleConfirmTransaction}
+                    className="w-full"
+                    disabled={!transactionId}
+                  >
+                    Submit Transaction ID
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>
