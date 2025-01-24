@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
-import { Loader2 } from 'lucide-react';
-import { 
-  TRADING_CONTRACT_ADDRESS,
-  buyBTZ,
-  connectWallet,
-  getTransactionHistory,
-  getRecipientAddress
-} from '@/contracts/TradingContract';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -21,61 +13,11 @@ interface BuyModalProps {
   coinValue: number;
 }
 
-interface NetworkConfig {
-  chainId: string;
-  chainName: string;
-  nativeCurrency: {
-    name: string;
-    symbol: string;
-    decimals: number;
-  };
-  rpcUrls: string[];
-  blockExplorerUrls: string[];
-}
-
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isNetworkSwitching, setIsNetworkSwitching] = useState(false);
-  const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
-  const [selectedNetwork, setSelectedNetwork] = useState<string>('polygon');
-
-  const networks: { [key: string]: NetworkConfig } = {
-    polygon: {
-      chainId: '0x89',
-      chainName: 'Polygon Mainnet',
-      nativeCurrency: {
-        name: 'MATIC',
-        symbol: 'MATIC',
-        decimals: 18
-      },
-      rpcUrls: ['https://polygon-rpc.com/'],
-      blockExplorerUrls: ['https://polygonscan.com/']
-    },
-    bsc: {
-      chainId: '0x38',
-      chainName: 'Binance Smart Chain',
-      nativeCurrency: {
-        name: 'BNB',
-        symbol: 'BNB',
-        decimals: 18
-      },
-      rpcUrls: ['https://bsc-dataseed.binance.org/'],
-      blockExplorerUrls: ['https://bscscan.com/']
-    },
-    ethereum: {
-      chainId: '0x1',
-      chainName: 'Ethereum Mainnet',
-      nativeCurrency: {
-        name: 'ETH',
-        symbol: 'ETH',
-        decimals: 18
-      },
-      rpcUrls: ['https://mainnet.infura.io/v3/'],
-      blockExplorerUrls: ['https://etherscan.io/']
-    }
-  };
-
+  const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+  
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
     if (!code.startsWith('0xb1q')) return false;
@@ -98,54 +40,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     return result;
   };
 
-  const switchNetwork = async (networkConfig: NetworkConfig) => {
-    if (!window.ethereum) {
-      toast.error("Please install MetaMask!");
-      return false;
-    }
-
-    try {
-      setIsNetworkSwitching(true);
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: networkConfig.chainId }],
-      });
-      return true;
-    } catch (switchError: any) {
-      if (switchError.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: networkConfig.chainId,
-              chainName: networkConfig.chainName,
-              nativeCurrency: networkConfig.nativeCurrency,
-              rpcUrls: networkConfig.rpcUrls,
-              blockExplorerUrls: networkConfig.blockExplorerUrls
-            }],
-          });
-          return true;
-        } catch (addError) {
-          console.error('Error adding network:', addError);
-          toast.error("Failed to add network. Please try again.");
-          return false;
-        }
-      }
-      console.error('Error switching network:', switchError);
-      return false;
-    } finally {
-      setIsNetworkSwitching(false);
-    }
-  };
-
-  const handleNetworkChange = async (networkKey: string) => {
-    const networkConfig = networks[networkKey];
-    if (await switchNetwork(networkConfig)) {
-      setSelectedNetwork(networkKey);
-      toast.success(`Switched to ${networkConfig.chainName}`);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validatePasscode(passcode)) {
@@ -154,6 +48,11 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     }
 
     const extractedAmount = extractKeywords(passcode);
+    if (!extractedAmount) {
+      toast.error("Could not extract valid amount from passcode");
+      return;
+    }
+
     if (!validateAmount(extractedAmount, coinValue)) {
       toast.error("Amount must be at least double the coin value");
       return;
@@ -161,18 +60,40 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
     setIsProcessing(true);
     try {
-      const { account } = await connectWallet();
-      
-      // Process the buy transaction
-      const receipt = await buyBTZ(extractedAmount);
-      setCurrentTxHash(receipt.hash);
-      toast.success("Payment processed successfully!");
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        
+        const transferFunctionSignature = '0xa9059cbb';
+        const amount = (parseFloat(extractedAmount) * 1000000).toString(16).padStart(64, '0');
+        const paddedAddress = USDT_CONTRACT_ADDRESS.slice(2).padStart(64, '0');
+        const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
 
-      // Get transaction history
-      const history = await getTransactionHistory(account);
-      console.log('Transaction history:', history);
+        const networkUSDTAddresses: { [key: string]: string } = {
+          '0x1': '0xdac17f958d2ee523a2206206994597c13d831ec7',
+          '0x89': '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+          '0x38': '0x55d398326f99059ff775485246999027b3197955',
+        };
 
-      onClose();
+        const currentUSDTAddress = networkUSDTAddresses[chainId] || USDT_CONTRACT_ADDRESS;
+
+        const transactionParameters = {
+          to: currentUSDTAddress,
+          from: accounts[0],
+          data: data,
+          gas: '0x186A0',
+        };
+
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParameters],
+        });
+
+        toast.success("USDT transfer initiated! Transaction hash: " + txHash);
+        onClose();
+      } else {
+        toast.error("MetaMask is not installed!");
+      }
     } catch (error: any) {
       toast.error(error.message || "Transaction failed. Please try again.");
     } finally {
@@ -188,34 +109,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Buy BTZ</DialogTitle>
-          <DialogDescription>
-            Select your preferred network for the transaction
-          </DialogDescription>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Network</label>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(networks).map(([key, network]) => (
-                <Button
-                  key={key}
-                  type="button"
-                  variant={selectedNetwork === key ? "default" : "outline"}
-                  onClick={() => handleNetworkChange(key)}
-                  className="w-full"
-                  disabled={isNetworkSwitching}
-                >
-                  {isNetworkSwitching ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    network.nativeCurrency.symbol
-                  )}
-                </Button>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium">Passcode</label>
             <Input
@@ -225,17 +121,22 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
               className="font-mono"
               placeholder="Enter 52-character passcode"
             />
+            <p className="text-sm text-muted-foreground">
+              If you don't have a passcode, please login/signup and order your coin.
+            </p>
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <label className="text-sm font-medium">Required USDT Amount</label>
-            <Input 
-              type="text"
-              value={isValid ? `${extractedAmount} USDT` : ''}
-              readOnly
-              className="font-mono bg-background"
-              placeholder="Amount will appear here"
-            />
+            <label className="text-sm font-medium">Required USDT Deposit Amount</label>
+            <div className="flex items-center space-x-2">
+              <Input 
+                type="text"
+                value={isValid ? `${extractedAmount} USDT` : ''}
+                readOnly
+                className="font-mono bg-background"
+                placeholder="Amount will appear here"
+              />
+            </div>
           </div>
 
           <StatusDisplay 
@@ -244,21 +145,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             passcode={passcode}
           />
 
-          <DepositAddress address={await getRecipientAddress()} />
-
-          {currentTxHash && (
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <label className="text-sm font-medium">Transaction Status</label>
-              <a 
-                href={`${networks[selectedNetwork].blockExplorerUrls[0]}tx/${currentTxHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-600 break-all"
-              >
-                View on Explorer
-              </a>
-            </div>
-          )}
+          <DepositAddress address={USDT_CONTRACT_ADDRESS} />
 
           <Button 
             type="submit" 
