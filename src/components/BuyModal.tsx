@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
-import Web3 from 'web3';
-import { USDT_PAYMENT_PROCESSOR_ADDRESS, USDT_PAYMENT_PROCESSOR_ABI } from '@/contracts/USDTPaymentProcessor';
-import type { Contract } from 'web3-eth-contract';
 import { Loader2 } from 'lucide-react';
+import { 
+  TRADING_CONTRACT_ADDRESS,
+  buyBTZ,
+  connectWallet,
+  getTransactionHistory
+} from '@/contracts/TradingContract';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -27,7 +30,6 @@ interface NetworkConfig {
   };
   rpcUrls: string[];
   blockExplorerUrls: string[];
-  usdtAddress: string;
 }
 
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
@@ -36,8 +38,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const [isNetworkSwitching, setIsNetworkSwitching] = useState(false);
   const [currentTxHash, setCurrentTxHash] = useState<string | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<string>('polygon');
-  const [web3Instance, setWeb3Instance] = useState<Web3 | null>(null);
-  const [contract, setContract] = useState<Contract | null>(null);
 
   const networks: { [key: string]: NetworkConfig } = {
     polygon: {
@@ -49,8 +49,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         decimals: 18
       },
       rpcUrls: ['https://polygon-rpc.com/'],
-      blockExplorerUrls: ['https://polygonscan.com/'],
-      usdtAddress: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
+      blockExplorerUrls: ['https://polygonscan.com/']
     },
     bsc: {
       chainId: '0x38',
@@ -61,8 +60,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         decimals: 18
       },
       rpcUrls: ['https://bsc-dataseed.binance.org/'],
-      blockExplorerUrls: ['https://bscscan.com/'],
-      usdtAddress: '0x55d398326f99059ff775485246999027b3197955'
+      blockExplorerUrls: ['https://bscscan.com/']
     },
     ethereum: {
       chainId: '0x1',
@@ -73,23 +71,9 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
         decimals: 18
       },
       rpcUrls: ['https://mainnet.infura.io/v3/'],
-      blockExplorerUrls: ['https://etherscan.io/'],
-      usdtAddress: '0xdac17f958d2ee523a2206206994597c13d831ec7'
+      blockExplorerUrls: ['https://etherscan.io/']
     }
   };
-
-  useEffect(() => {
-    if (typeof window.ethereum !== 'undefined') {
-      const web3 = new Web3(window.ethereum as any);
-      setWeb3Instance(web3);
-      
-      const contractInstance = new web3.eth.Contract(
-        USDT_PAYMENT_PROCESSOR_ABI,
-        USDT_PAYMENT_PROCESSOR_ADDRESS
-      );
-      setContract(contractInstance);
-    }
-  }, []);
 
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
@@ -129,17 +113,15 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         try {
-          const params = {
-            chainId: networkConfig.chainId,
-            chainName: networkConfig.chainName,
-            nativeCurrency: networkConfig.nativeCurrency,
-            rpcUrls: networkConfig.rpcUrls,
-            blockExplorerUrls: networkConfig.blockExplorerUrls
-          };
-          
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [params],
+            params: [{
+              chainId: networkConfig.chainId,
+              chainName: networkConfig.chainName,
+              nativeCurrency: networkConfig.nativeCurrency,
+              rpcUrls: networkConfig.rpcUrls,
+              blockExplorerUrls: networkConfig.blockExplorerUrls
+            }],
           });
           return true;
         } catch (addError) {
@@ -160,17 +142,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     if (await switchNetwork(networkConfig)) {
       setSelectedNetwork(networkKey);
       toast.success(`Switched to ${networkConfig.chainName}`);
-      
-      if (typeof window.ethereum !== 'undefined') {
-        const web3 = new Web3(window.ethereum as any);
-        setWeb3Instance(web3);
-        
-        const contractInstance = new web3.eth.Contract(
-          USDT_PAYMENT_PROCESSOR_ABI,
-          USDT_PAYMENT_PROCESSOR_ADDRESS
-        );
-        setContract(contractInstance);
-      }
     }
   };
 
@@ -189,25 +160,16 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
 
     setIsProcessing(true);
     try {
-      if (!web3Instance || !contract) {
-        toast.error("Web3 not initialized");
-        return;
-      }
-
-      const accounts = await window.ethereum!.request({ method: 'eth_requestAccounts' });
-      const amount = web3Instance.utils.toWei(extractedAmount, 'ether');
-
-      // Use processPayment method from the contract
-      const tx = await contract.methods.processPayment(amount).send({
-        from: accounts[0]
-      });
-
-      setCurrentTxHash(tx.transactionHash);
+      const { account } = await connectWallet();
+      
+      // Process the buy transaction
+      const receipt = await buyBTZ(extractedAmount);
+      setCurrentTxHash(receipt.hash);
       toast.success("Payment processed successfully!");
 
-      // Get payment status
-      const status = await contract.methods.getPaymentStatus(accounts[0]).call();
-      console.log('Payment status:', web3Instance.utils.fromWei(status, 'ether'), 'USDT');
+      // Get transaction history
+      const history = await getTransactionHistory(account);
+      console.log('Transaction history:', history);
 
       onClose();
     } catch (error: any) {
@@ -225,7 +187,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ</DialogTitle>
           <DialogDescription>
             Select your preferred network for the transaction
           </DialogDescription>
