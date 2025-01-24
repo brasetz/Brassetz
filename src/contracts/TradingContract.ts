@@ -6,42 +6,44 @@ export const TRADING_COIN_VALUE = 0.00035;
 export const TRADING_CONTRACT_ABI = [
   {
     "inputs": [],
-    "name": "buy",
+    "name": "confirmPayment",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
         "internalType": "address",
-        "name": "account",
+        "name": "sender",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "confirmationMessage",
+        "type": "string"
       }
     ],
-    "name": "getTransactionHistory",
+    "name": "PaymentReceived",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "recipientAddress",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isBuy",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct Trading.Transaction[]",
+        "internalType": "address payable",
         "name": "",
-        "type": "tuple[]"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -77,8 +79,22 @@ export const buyBTZ = async (amount: string) => {
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(TRADING_CONTRACT_ADDRESS, TRADING_CONTRACT_ABI, signer);
 
-    const tx = await contract.buy({ value: ethers.parseEther(amount) });
+    // Create transaction with nonce
+    const nonce = await provider.getTransactionCount(await signer.getAddress());
+    const tx = await contract.confirmPayment({ 
+      value: ethers.parseEther(amount),
+      nonce: nonce
+    });
+    
     const receipt = await tx.wait();
+    
+    // Listen for PaymentReceived event
+    const filter = contract.filters.PaymentReceived(await signer.getAddress());
+    const events = await contract.queryFilter(filter, receipt.blockNumber, receipt.blockNumber);
+    
+    if (events.length > 0) {
+      console.log('Payment confirmed:', events[0].args.confirmationMessage);
+    }
     
     return receipt;
   } catch (error: any) {
@@ -93,10 +109,10 @@ export const getCoinValue = () => {
 export interface Transaction {
   timestamp: bigint;
   amount: bigint;
-  isBuy: boolean;
+  confirmationMessage?: string;
 }
 
-export const getTransactionHistory = async (address: string): Promise<Transaction[]> => {
+export const getRecipientAddress = async (): Promise<string> => {
   try {
     if (!window.ethereum) {
       throw new Error('Please install MetaMask');
@@ -105,9 +121,8 @@ export const getTransactionHistory = async (address: string): Promise<Transactio
     const provider = new ethers.BrowserProvider(window.ethereum);
     const contract = new ethers.Contract(TRADING_CONTRACT_ADDRESS, TRADING_CONTRACT_ABI, provider);
     
-    const history = await contract.getTransactionHistory(address);
-    return history;
+    return await contract.recipientAddress();
   } catch (error: any) {
-    throw new Error(error.message || 'Failed to fetch transaction history');
+    throw new Error(error.message || 'Failed to fetch recipient address');
   }
 };

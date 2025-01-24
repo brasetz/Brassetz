@@ -11,7 +11,8 @@ import {
   TRADING_CONTRACT_ADDRESS,
   buyBTZ,
   connectWallet,
-  getTransactionHistory
+  getTransactionHistory,
+  getRecipientAddress
 } from '@/contracts/TradingContract';
 
 interface BuyModalProps {
@@ -243,7 +244,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
             passcode={passcode}
           />
 
-          <DepositAddress address={networks[selectedNetwork].usdtAddress} />
+          <DepositAddress address={await getRecipientAddress()} />
 
           {currentTxHash && (
             <div className="bg-muted p-4 rounded-lg space-y-2">
