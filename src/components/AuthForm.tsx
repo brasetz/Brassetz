@@ -5,19 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface AuthFormProps {
   onSuccess: (passphrase: string) => void;
 }
-
-const countryCodes = [
-  { value: "91", label: "India (+91)" },
-  { value: "1", label: "USA (+1)" },
-  { value: "44", label: "UK (+44)" },
-  { value: "86", label: "China (+86)" },
-  { value: "81", label: "Japan (+81)" },
-  { value: "49", label: "Germany (+49)" },
-];
 
 const countries = [
   "USA", "India", "UK", "China", "Japan", "Germany", "France", "Italy", "Canada", "Australia"
@@ -27,12 +19,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [passphrase, setPassphrase] = useState('');
   const [fullName, setFullName] = useState('');
-  const [countryCode, setCountryCode] = useState('91');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [dob, setDob] = useState('');
   const [city, setCity] = useState('');
-  const [country, setCountry] = useState('USA');
+  const [country, setCountry] = useState('India');
   const [salt, setSalt] = useState('');
   const [address, setAddress] = useState('');
   const [message, setMessage] = useState('');
@@ -40,7 +31,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const [generatedPassphrase, setGeneratedPassphrase] = useState('');
 
   useEffect(() => {
-    // Check for existing session
     const savedPassphrase = localStorage.getItem('userPassphrase');
     if (savedPassphrase) {
       onSuccess(savedPassphrase);
@@ -55,32 +45,53 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   };
 
   const generateDID = async (name: string, dob: string, city: string, salt: string) => {
-    // Remove spaces and special characters from name
     const cleanName = name.replace(/[^a-zA-Z]/g, '');
-    // Remove dashes from date
     const cleanDob = dob.replace(/-/g, '');
-    // Remove spaces from city
     const cleanCity = city.replace(/\s+/g, '');
-    
-    // Combine the values in the specified format
     const baseString = `${cleanName}${cleanDob}${cleanCity}${salt}`;
-    // Generate SHA256 hash
     const hash = await generateSHA256(baseString);
-    // Return the final format: 0x + hash + 0btz
     return `0x${hash}0btz`;
   };
 
   const validateLoginPassphrase = (pass: string) => {
     if (!pass.startsWith('0x')) return false;
     if (!pass.endsWith('0btz')) return false;
-    if (pass.length !== 70) {
-      return false;
-    }
-    
-    // Check if middle part is a valid hex string
+    if (pass.length !== 70) return false;
     const middlePart = pass.slice(2, -4);
     const hexRegex = /^[0-9a-f]+$/i;
     return hexRegex.test(middlePart);
+  };
+
+  const validateForm = () => {
+    if (fullName.length < 3) {
+      toast.error("Please enter your full name (minimum 3 characters)");
+      return false;
+    }
+    if (!dob) {
+      toast.error("Please enter your date of birth");
+      return false;
+    }
+    if (!city) {
+      toast.error("Please enter your city");
+      return false;
+    }
+    if (!salt) {
+      toast.error("Please enter a salt key (e.g., childhood school, favorite person)");
+      return false;
+    }
+    if (!mobile || mobile.length < 10) {
+      toast.error("Please enter a valid mobile number (minimum 10 digits)");
+      return false;
+    }
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      toast.error("Please enter a valid email address");
+      return false;
+    }
+    if (!address) {
+      toast.error("Please enter your address");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,45 +100,30 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
 
     try {
       if (isSignup) {
-        if (fullName.length < 3) {
-          toast.error("Please enter your full name");
-          return;
-        }
-        if (!dob) {
-          toast.error("Please enter your date of birth");
-          return;
-        }
-        if (!city) {
-          toast.error("Please enter your city");
-          return;
-        }
-        if (!salt) {
-          toast.error("Please enter a salt value (e.g., childhood school, favorite person)");
-          return;
-        }
-        if (!mobile || mobile.length < 7) {
-          toast.error("Please enter a valid mobile number");
-          return;
-        }
-        if (!email.includes('@')) {
-          toast.error("Please enter a valid email address");
+        if (!validateForm()) {
+          setIsLoading(false);
           return;
         }
 
-        // Submit to Google Apps Script
         const formData = new FormData();
         formData.append('Name', fullName);
         formData.append('Email', email);
-        formData.append('Mobile', `+${countryCode}${mobile}`);
+        formData.append('Mobile', mobile);
         formData.append('Address', address);
         formData.append('DOB', dob);
         formData.append('City', city);
         formData.append('Country', country);
         formData.append('Message', message);
+        formData.append('saltkey', salt);
 
-        const response = await fetch('https://script.google.com/macros/s/AKfycbw8Jz81LW555JPi8InP0Xz2jQhd8_uQ2hfml_-tARgI5kq_g831wFdow1hqTGrQeMD8/exec', {
+        const params = new URLSearchParams();
+        formData.forEach((value, key) => {
+          params.append(key, value.toString());
+        });
+
+        const response = await fetch('https://script.google.com/macros/s/AKfycbzbaUEzMZZhHFi1DYLy84NtpPxGbouMgVGMUagIO3xYyoZJumUoPMSKfnOpboWzCFz45g/exec', {
           method: 'POST',
-          body: formData,
+          body: params,
         });
 
         const data = await response.json();
@@ -139,15 +135,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         const did = await generateDID(fullName, dob, city, salt);
         setGeneratedPassphrase(did);
         localStorage.setItem('userPassphrase', did);
-        toast.success("Signup successful! Please save your DID");
+        toast.success("Registration successful! Please save your DID");
         onSuccess(did);
       } else {
         if (!validateLoginPassphrase(passphrase)) {
-          if (passphrase.length !== 70) {
-            toast.error("Invalid DID length. DID must be exactly 70 characters long");
-          } else {
-            toast.error("Invalid DID format. DID must start with '0x' and end with '0btz'");
-          }
+          toast.error("Invalid DID format. Must start with '0x' and end with '0btz'");
           return;
         }
         localStorage.setItem('userPassphrase', passphrase);
@@ -155,7 +147,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         toast.success("Login successful!");
       }
     } catch (error) {
-      toast.error("Error submitting form. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Error submitting form. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -181,115 +173,133 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {isSignup ? (
           <>
-            <div>
+            <div className="space-y-2">
+              <Label htmlFor="Name">Name</Label>
               <Input
+                id="Name"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full Name"
-                className="w-full"
+                placeholder="Enter your full name"
+                required
               />
             </div>
-            
-            <Input
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full"
-            />
 
-            <Input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="City"
-              className="w-full"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="DOB">Date of Birth</Label>
+              <Input
+                id="DOB"
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                required
+              />
+            </div>
 
-            <Select
-              value={country}
-              onValueChange={setCountry}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="City">City</Label>
+              <Input
+                id="City"
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Enter your city"
+                required
+              />
+            </div>
 
-            <Input
-              type="text"
-              value={salt}
-              onChange={(e) => setSalt(e.target.value)}
-              placeholder="Salt (e.g., childhood school, favorite person)"
-              className="w-full"
-            />
-            
-            <div className="flex space-x-2">
+            <div className="space-y-2">
+              <Label htmlFor="Country">Country</Label>
               <Select
-                value={countryCode}
-                onValueChange={setCountryCode}
+                value={country}
+                onValueChange={setCountry}
               >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Country" />
+                <SelectTrigger id="Country" className="w-full">
+                  <SelectValue placeholder="Select Country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countryCodes.map((code) => (
-                    <SelectItem key={code.value} value={code.value}>
-                      {code.label}
+                  {countries.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="saltkey">Salt Key</Label>
               <Input
+                id="saltkey"
+                type="text"
+                value={salt}
+                onChange={(e) => setSalt(e.target.value)}
+                placeholder="Enter a memorable phrase (e.g., childhood school)"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="Mobile">Mobile</Label>
+              <Input
+                id="Mobile"
                 type="tel"
                 value={mobile}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
                   setMobile(value);
                 }}
-                placeholder="Mobile Number"
-                className="flex-1"
+                placeholder="Enter your mobile number"
+                required
               />
             </div>
 
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="Email">Email</Label>
+              <Input
+                id="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                required
+              />
+            </div>
 
-            <Input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Address"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="Address">Address</Label>
+              <Textarea
+                id="Address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Enter your address"
+                required
+              />
+            </div>
 
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Message (optional)"
-              className="min-h-[100px]"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="Message">Message (Optional)</Label>
+              <Textarea
+                id="Message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Enter any additional message"
+              />
+            </div>
           </>
         ) : (
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="passphrase">DID</Label>
             <Input
+              id="passphrase"
               type="password"
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
               placeholder="Enter your DID"
               className="w-full"
             />
-            <p className="text-sm text-muted-foreground mt-1">
-              Your DID ends with '0xbtz'
+            <p className="text-sm text-muted-foreground">
+              Your DID ends with '0btz'
             </p>
           </div>
         )}
