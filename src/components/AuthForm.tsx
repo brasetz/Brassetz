@@ -114,7 +114,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         formData.append('City', city);
         formData.append('Country', country);
         formData.append('Message', message);
-        formData.append('saltkey', salt);
+        formData.append('salt key', salt);
 
         const params = new URLSearchParams();
         formData.forEach((value, key) => {
