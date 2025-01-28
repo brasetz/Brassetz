@@ -6,8 +6,9 @@ import { AuthForm } from './AuthForm';
 import { BrasetzBalance } from './BrasetzBalance';
 import { Copy, LogOut } from 'lucide-react';
 import { Helmet } from 'react-helmet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TradeRegistrationForm } from './TradeRegistrationForm';
 
-// Memoized PassphraseDisplay component
 const PassphraseDisplay = memo(({ 
   userPassphrase, 
   onCopy 
@@ -59,9 +60,9 @@ export const LoginForm = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showBalanceView, setShowBalanceView] = useState(false);
   const [userPassphrase, setUserPassphrase] = useState('');
+  const [showTradeRegistration, setShowTradeRegistration] = useState(false);
   const COIN_VALUE = 0.035;
 
-  // Memoized handlers
   const handleAuthSuccess = useCallback((passphrase: string) => {
     setIsLoggedIn(true);
     setUserPassphrase(passphrase);
@@ -76,7 +77,7 @@ export const LoginForm = () => {
   }, []);
 
   const handleRegisterClick = useCallback(() => {
-    window.open('https://forms.office.com/r/irGB2vvvGe', '_blank');
+    setShowTradeRegistration(true);
   }, []);
 
   const handleBrasetzDIDClick = useCallback(() => {
@@ -185,6 +186,15 @@ export const LoginForm = () => {
             <TradingChart coinValue={COIN_VALUE} showLine={true} />
           </div>
         </div>
+
+        <Dialog open={showTradeRegistration} onOpenChange={setShowTradeRegistration}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Trade Registration Form</DialogTitle>
+            </DialogHeader>
+            <TradeRegistrationForm onClose={() => setShowTradeRegistration(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
