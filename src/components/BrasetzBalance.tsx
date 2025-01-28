@@ -22,18 +22,19 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
     return true;
   };
 
-  const extractGappedCharacters = (text: string): string => {
-    let result = '';
-    for (let i = 0; i < text.length; i += 2) {
-      result += text[i];
-    }
-    return result;
-  };
-
   const comparePassphrases = (loginPhrase: string, balancePhrase: string): boolean => {
-    const loginGapped = extractGappedCharacters(loginPhrase);
-    const balanceGapped = extractGappedCharacters(balancePhrase);
-    return loginGapped === balanceGapped.slice(0, loginGapped.length);
+    // Compare each character from login passphrase with corresponding positions in balance passphrase
+    const loginChars = loginPhrase.split('');
+    let currentPos = 0;
+    
+    for (let i = 0; i < loginChars.length; i++) {
+      if (balancePhrase[currentPos] !== loginChars[i]) {
+        return false;
+      }
+      // Move to next position in balance passphrase (skip one character)
+      currentPos += 2;
+    }
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +46,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
     }
 
     if (!comparePassphrases(LOGIN_PASSPHRASE, passcode)) {
-      toast.error("Invalid code! Gapped characters do not match login passphrase.");
+      toast.error("Invalid code! Characters do not match with login passphrase pattern.");
       return;
     }
 
@@ -83,7 +84,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
                   className="w-full font-mono"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Must be 147 characters long, match the gapped pattern, and end with @021btz
+                  Must be 147 characters long, match the login pattern with gaps, and end with @021btz
                 </p>
               </div>
               <Button type="submit" className="w-full">
