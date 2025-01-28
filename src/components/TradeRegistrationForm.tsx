@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,138 +6,103 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-interface FormData {
-  "Token Name": string;
-  "Brasetz(D-ID)": string;
-  Email: string;
-  "Buy/Sell": string;
-  "Current price": string;
-  "Date and Time": string;
-}
+const COIN_VALUE = 0.035;
 
 export const TradeRegistrationForm = ({ onClose }: { onClose: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    "Token Name": "",
-    "Brasetz(D-ID)": "",
-    Email: "",
-    "Buy/Sell": "Buy",
-    "Current price": "",
-    "Date and Time": "",
+  const [formData, setFormData] = useState({
+    tokenName: '',
+    brasetzDID: '',
+    email: '',
+    buySell: 'Buy',
+    currentPrice: COIN_VALUE.toString(),
   });
 
-  const validateForm = () => {
-    if (!formData["Token Name"]) {
-      toast.error("Token Name is required");
-      return false;
-    }
-    if (!formData["Brasetz(D-ID)"] || formData["Brasetz(D-ID)"].length !== 70) {
-      toast.error("Brasetz(D-ID) must be exactly 70 characters");
-      return false;
-    }
-    if (!formData.Email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.Email)) {
-      toast.error("Please enter a valid email address");
-      return false;
-    }
-    if (!formData["Current price"] || parseFloat(formData["Current price"]) <= 0) {
-      toast.error("Please enter a valid current price");
-      return false;
-    }
-    return true;
+  const validateBrasetzDID = (did: string) => {
+    return did.length === 70;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateBrasetzDID(formData.brasetzDID)) {
+      toast.error("Brasetz(D-ID) must be exactly 70 characters long");
+      return;
+    }
 
     setIsLoading(true);
-
-    // Add UTC timestamp and date
-    const now = new Date();
-    const timestamp = now.toISOString();
-    const formDataWithTimestamp = {
-      ...formData,
-      "Date and Time": timestamp
-    };
-
-    const params = new URLSearchParams();
-    Object.entries(formDataWithTimestamp).forEach(([key, value]) => {
-      params.append(key, value.toString());
-    });
-
+    
     try {
-      const response = await fetch(
-        "https://script.google.com/macros/s/AKfycbxweoEBqT8VyJo-EiPQXEQySXzbJZUPAKYNy6LiL9xs2_idfy89rPeNWLltK5A7vbkzOA/exec",
-        {
-          method: "POST",
-          body: params,
-        }
-      );
+      const params = new URLSearchParams();
+      const timestamp = new Date().toISOString();
+      
+      Object.entries(formData).forEach(([key, value]) => {
+        params.append(key, value);
+      });
+      params.append('timestamp', timestamp);
+
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxweoEBqT8VyJo-EiPQXEQySXzbJZUPAKYNy6LiL9xs2_idfy89rPeNWLltK5A7vbkzOA/exec', {
+        method: 'POST',
+        body: params,
+      });
 
       const data = await response.json();
-
-      if (data.result === "success") {
-        toast.success("Trade registration submitted successfully!");
+      
+      if (data.result === 'success') {
+        toast.success('Form submitted successfully!');
         onClose();
       } else {
-        toast.error(`Error: ${data.error || "Something went wrong"}`);
+        toast.error(`Error: ${data.error}`);
       }
     } catch (error) {
-      toast.error(`Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
+      toast.error('Failed to submit form. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6">
+    <form onSubmit={handleSubmit} className="space-y-6 mt-4">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="TokenName">Token Name</Label>
+        <div className="grid gap-2">
+          <Label htmlFor="tokenName">Token Name</Label>
           <Input
-            id="TokenName"
-            value={formData["Token Name"]}
-            onChange={(e) => setFormData({ ...formData, "Token Name": e.target.value })}
-            className="w-full"
+            id="tokenName"
             required
+            value={formData.tokenName}
+            onChange={(e) => setFormData(prev => ({ ...prev, tokenName: e.target.value }))}
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="BrasetzDID">Brasetz(D-ID)</Label>
+        <div className="grid gap-2">
+          <Label htmlFor="brasetzDID">Brasetz(D-ID)</Label>
           <Input
-            id="BrasetzDID"
-            value={formData["Brasetz(D-ID)"]}
-            onChange={(e) => setFormData({ ...formData, "Brasetz(D-ID)": e.target.value })}
-            className="w-full"
-            maxLength={70}
+            id="brasetzDID"
             required
+            value={formData.brasetzDID}
+            onChange={(e) => setFormData(prev => ({ ...prev, brasetzDID: e.target.value }))}
           />
-          <p className="text-sm text-muted-foreground">
-            Must be exactly 70 characters. Current length: {formData["Brasetz(D-ID)"].length}
-          </p>
+          <p className="text-sm text-muted-foreground">Must be exactly 70 characters</p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="Email">Email</Label>
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="Email"
+            id="email"
             type="email"
-            value={formData.Email}
-            onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
-            className="w-full"
             required
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="BuySell">Buy/Sell</Label>
+        <div className="grid gap-2">
+          <Label htmlFor="buySell">Buy/Sell</Label>
           <Select
-            value={formData["Buy/Sell"]}
-            onValueChange={(value) => setFormData({ ...formData, "Buy/Sell": value })}
+            value={formData.buySell}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, buySell: value }))}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger>
               <SelectValue placeholder="Select operation" />
             </SelectTrigger>
             <SelectContent>
@@ -147,30 +112,28 @@ export const TradeRegistrationForm = ({ onClose }: { onClose: () => void }) => {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="CurrentPrice">Current Price</Label>
+        <div className="grid gap-2">
+          <Label htmlFor="currentPrice">Current Price</Label>
           <Input
-            id="CurrentPrice"
+            id="currentPrice"
             type="number"
             step="0.01"
-            value={formData["Current price"]}
-            onChange={(e) => setFormData({ ...formData, "Current price": e.target.value })}
-            className="w-full"
             required
+            value={formData.currentPrice}
+            disabled
           />
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Submitting...
-          </>
-        ) : (
-          "Submit Trade Registration"
-        )}
-      </Button>
+      <div className="flex justify-end gap-4">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Submit
+        </Button>
+      </div>
     </form>
   );
 };

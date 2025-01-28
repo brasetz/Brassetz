@@ -17,15 +17,23 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
   const FIXED_KEY = "Brasetz";
 
   const validatePasscode = (code: string): boolean => {
-    if (code.length !== 62) return false;
-    if (!code.startsWith('02a')) return false;
+    if (code.length !== 147) return false;
     if (!code.endsWith('@021btz')) return false;
     return true;
   };
 
+  const extractGappedCharacters = (text: string): string => {
+    let result = '';
+    for (let i = 0; i < text.length; i += 2) {
+      result += text[i];
+    }
+    return result;
+  };
+
   const extractUsername = (code: string): string => {
-    const positions = [6, 9, 11, 14, 21, 24, 27, 29, 31, 32]; // -1 from given positions because string index starts at 0
-    let extractedChars = positions.map(pos => code[pos]);
+    const gappedCode = extractGappedCharacters(code);
+    const positions = [6, 9, 11, 14, 21, 24, 27, 29, 31, 32];
+    let extractedChars = positions.map(pos => gappedCode[pos]);
     return extractedChars.filter(char => !['@', '#', '$', '%', '^', '&', '*', '(', ')', '+'].includes(char)).join('');
   };
 
@@ -33,7 +41,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
     e.preventDefault();
     
     if (!validatePasscode(passcode)) {
-      toast.error("Invalid passcode format!");
+      toast.error("Invalid passcode format! Must be 147 characters and end with @021btz");
       return;
     }
 
@@ -69,9 +77,12 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
                   type="text"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter 62-digit passcode"
+                  placeholder="Enter 147-digit passcode"
                   className="w-full"
                 />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Must be 147 characters long and end with @021btz
+                </p>
               </div>
               <Button type="submit" className="w-full">
                 View Balance
