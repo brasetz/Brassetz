@@ -14,7 +14,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
   const [passcode, setPasscode] = useState('');
   const [username, setUsername] = useState('');
   const COIN_VALUE = 0.035;
-  const FIXED_KEY = "Brasetz";
+  const LOGIN_PASSPHRASE = "0xb18d2392c22be15c4c1e94427fbb5258c4706f7c0c7a053f15179db3358dcc9a0btz";
 
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 147) return false;
@@ -30,11 +30,10 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
     return result;
   };
 
-  const extractUsername = (code: string): string => {
-    const gappedCode = extractGappedCharacters(code);
-    const positions = [6, 9, 11, 14, 21, 24, 27, 29, 31, 32];
-    let extractedChars = positions.map(pos => gappedCode[pos]);
-    return extractedChars.filter(char => !['@', '#', '$', '%', '^', '&', '*', '(', ')', '+'].includes(char)).join('');
+  const comparePassphrases = (loginPhrase: string, balancePhrase: string): boolean => {
+    const loginGapped = extractGappedCharacters(loginPhrase);
+    const balanceGapped = extractGappedCharacters(balancePhrase);
+    return loginGapped === balanceGapped.slice(0, loginGapped.length);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,14 +44,14 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
       return;
     }
 
-    const extractedUsername = extractUsername(passcode);
-    if (extractedUsername) {
-      setUsername(extractedUsername);
-      setShowBalance(true);
-      toast.success("Balance view accessed successfully!");
-    } else {
-      toast.error("Could not extract valid username!");
+    if (!comparePassphrases(LOGIN_PASSPHRASE, passcode)) {
+      toast.error("Invalid code! Gapped characters do not match login passphrase.");
+      return;
     }
+
+    setUsername(LOGIN_PASSPHRASE.slice(0, 8) + "..." + LOGIN_PASSPHRASE.slice(-8));
+    setShowBalance(true);
+    toast.success("Balance view accessed successfully!");
   };
 
   return (
@@ -69,7 +68,10 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
       {!showBalance ? (
         <div className="space-y-4">
           <div className="p-6 bg-card rounded-lg border border-border">
-            <h3 className="text-lg font-semibold mb-4">Fixed Key: {FIXED_KEY}</h3>
+            <h3 className="text-lg font-semibold mb-4">Login Passphrase</h3>
+            <code className="block p-2 bg-muted rounded text-sm mb-4 break-all">
+              {LOGIN_PASSPHRASE}
+            </code>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Enter Passcode</label>
@@ -78,10 +80,10 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
                   placeholder="Enter 147-digit passcode"
-                  className="w-full"
+                  className="w-full font-mono"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Must be 147 characters long and end with @021btz
+                  Must be 147 characters long, match the gapped pattern, and end with @021btz
                 </p>
               </div>
               <Button type="submit" className="w-full">
