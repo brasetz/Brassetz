@@ -15,7 +15,7 @@ const Index = () => {
   const [showSellModal, setShowSellModal] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const COIN_VALUE = 0.035;
+  const COIN_VALUE = 0.055;
 
   useEffect(() => {
     const checkWalletConnection = async () => {
