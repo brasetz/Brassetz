@@ -84,7 +84,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
                   className="w-full font-mono"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Must be 147 characters long, match the login pattern with gaps, and end with @021btz
+                  Must be 147 characters long, match the view balance, must ends with @021btz
                 </p>
               </div>
               <Button type="submit" className="w-full">
