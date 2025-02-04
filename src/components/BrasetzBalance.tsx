@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 interface BrasetzBalanceProps {
   onSell: () => void;
   onBack?: () => void;
+  userPassphrase?: string;
 }
 
-export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }) => {
+export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack, userPassphrase }) => {
   const [showBalance, setShowBalance] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [username, setUsername] = useState('');
   const COIN_VALUE = 0.035;
-  const LOGIN_PASSPHRASE = "0xb18d2392c22be15c4c1e94427fbb5258c4706f7c0c7a053f15179db3358dcc9a0btz";
 
   const validatePasscode = (code: string): boolean => {
     if (code.length !== 147) return false;
@@ -23,6 +23,11 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
   };
 
   const comparePassphrases = (loginPhrase: string, balancePhrase: string): boolean => {
+    if (!loginPhrase) {
+      toast.error("No login passphrase found. Please log in again.");
+      return false;
+    }
+
     const loginChars = loginPhrase.split('');
     let currentPos = 0;
     
@@ -43,12 +48,17 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
       return;
     }
 
-    if (!comparePassphrases(LOGIN_PASSPHRASE, passcode)) {
-      toast.error("Invalid code! Characters do not match with login passphrase pattern.");
+    if (!userPassphrase) {
+      toast.error("No login passphrase found. Please log in again.");
       return;
     }
 
-    setUsername(LOGIN_PASSPHRASE.slice(0, 8) + "..." + LOGIN_PASSPHRASE.slice(-8));
+    if (!comparePassphrases(userPassphrase, passcode)) {
+      toast.error("Invalid code! Characters do not match with your login passphrase pattern.");
+      return;
+    }
+
+    setUsername(userPassphrase.slice(0, 8) + "..." + userPassphrase.slice(-8));
     setShowBalance(true);
     toast.success("Balance view accessed successfully!");
   };
@@ -67,9 +77,9 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
       {!showBalance ? (
         <div className="space-y-4">
           <div className="p-6 bg-card rounded-lg border border-border">
-            <h3 className="text-lg font-semibold mb-4">Login Passphrase</h3>
+            <h3 className="text-lg font-semibold mb-4">Your Login Passphrase</h3>
             <code className="block p-2 bg-muted rounded text-sm mb-4 break-all">
-              {LOGIN_PASSPHRASE}
+              {userPassphrase || 'No passphrase found'}
             </code>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -82,7 +92,7 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
                   className="w-full font-mono"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Must be 147 characters long, match the view balance, must ends with @021btz
+                  Must be 147 characters long, match the view balance pattern, must end with @021btz
                 </p>
               </div>
               <Button type="submit" className="w-full">

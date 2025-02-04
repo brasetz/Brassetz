@@ -115,7 +115,11 @@ export const LoginForm = () => {
           <title>Balance - Brasetz Trading Platform</title>
           <meta name="description" content="View your Brasetz balance and trading history." />
         </Helmet>
-        <BrasetzBalance onSell={handleSell} onBack={handleBackFromBalance} />
+        <BrasetzBalance 
+          onSell={handleSell} 
+          onBack={handleBackFromBalance}
+          userPassphrase={userPassphrase}
+        />
       </>
     );
   }
