@@ -23,7 +23,6 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
   };
 
   const comparePassphrases = (loginPhrase: string, balancePhrase: string): boolean => {
-    // Compare each character from login passphrase with corresponding positions in balance passphrase
     const loginChars = loginPhrase.split('');
     let currentPos = 0;
     
@@ -31,7 +30,6 @@ export const BrasetzBalance: React.FC<BrasetzBalanceProps> = ({ onSell, onBack }
       if (balancePhrase[currentPos] !== loginChars[i]) {
         return false;
       }
-      // Move to next position in balance passphrase (skip one character)
       currentPos += 2;
     }
     return true;

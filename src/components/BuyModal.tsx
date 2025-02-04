@@ -8,6 +8,7 @@ import { DepositAddress } from './buy/DepositAddress';
 import { validateAmount } from '@/utils/validation';
 import { convertUSDTtoINR } from '@/utils/currencyConverter';
 import { ArrowLeft } from 'lucide-react';
+import { TransactionForm } from './TransactionForm';
 
 interface BuyModalProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   const [showUPIDetails, setShowUPIDetails] = useState(false);
   const [inrAmount, setInrAmount] = useState<number | null>(null);
   const [showTxInput, setShowTxInput] = useState(false);
-  const [transactionId, setTransactionId] = useState('');
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
   const USDT_CONTRACT_ADDRESS = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
   const UPI_ID = 'deepaks5559@fifederal';
   
@@ -125,20 +126,23 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
   };
 
   const handleConfirmTransaction = () => {
-    if (!transactionId) {
-      toast.error("Please enter the transaction ID");
-      return;
-    }
-    
-    toast.success("Transaction confirmed! ID: " + transactionId);
+    setShowTransactionForm(true);
+  };
+
+  const handleTransactionSuccess = () => {
+    toast.success("Transaction submitted for review. We'll update you via email.");
     onClose();
   };
 
   const handleBack = () => {
-    setShowUPIDetails(false);
-    setShowTxInput(false);
-    setTransactionId('');
-    setInrAmount(null);
+    if (showTransactionForm) {
+      setShowTransactionForm(false);
+      setShowTxInput(false);
+    } else {
+      setShowUPIDetails(false);
+      setShowTxInput(false);
+      setInrAmount(null);
+    }
   };
 
   const isValid = validatePasscode(passcode);
@@ -160,7 +164,7 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                UPI Payment Details
+                {showTransactionForm ? 'Transaction Details' : 'UPI Payment Details'}
               </div>
             ) : (
               'Buy BTZ with USDT/UPI'
@@ -223,6 +227,8 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                 </Button>
               </div>
             </>
+          ) : showTransactionForm ? (
+            <TransactionForm onSuccess={handleTransactionSuccess} />
           ) : (
             <div className="space-y-4">
               <div className="text-center">
@@ -237,33 +243,13 @@ export const BuyModal: React.FC<BuyModalProps> = ({ isOpen, onClose, coinValue }
                 </p>
               </div>
 
-              {!showTxInput ? (
-                <Button
-                  type="button"
-                  onClick={() => setShowTxInput(true)}
-                  className="w-full"
-                >
-                  Confirm Payment
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Enter UPI Transaction ID"
-                    className="w-full"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleConfirmTransaction}
-                    className="w-full"
-                    disabled={!transactionId}
-                  >
-                    Submit Transaction ID
-                  </Button>
-                </div>
-              )}
+              <Button
+                type="button"
+                onClick={handleConfirmTransaction}
+                className="w-full"
+              >
+                Confirm Payment
+              </Button>
             </div>
           )}
         </form>
